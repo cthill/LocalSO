@@ -14,6 +14,7 @@ MOB_SPAWN_RATE_MULTIPLIER = 2.0 # (default = 1.0) change this number to increase
 MOB_SPAWN_COUNT_MAX_MULTIPLIER = 2 # (default = 1) change this number to increase the maximum number of mobs in each area
 MOB_SPAWN_SPECIAL_RATE_MULTIPLIER = 1.0 # (default = 1.0)
 MOB_SPAWN_BUNNY_RATE_MULTIPLIER = 1.0 # (default = 1.0)
+PLAYER_DAMAGE_MULTIPLIER = 1.0 # (default = 1.0)
 
 # Do not change these parameters, modifying them may cause bugs or performance issues
 PORT_ACCOUNT = 3104
