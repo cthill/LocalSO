@@ -37,38 +37,38 @@ Note: you will not be able to connect to the official www.stick-online.com websi
 Status of game features
 #### Working
  - everything that is handled client-side:
-  - shops
-  - gold and item drops
-  - leveling
-  - HP/MP
-  - death
-  - spawn points
-  - rudimentary anticheat
+   - shops
+   - gold and item drops
+   - leveling
+   - HP/MP
+   - death
+   - spawn points
+   - rudimentary anticheat
  - attacking and killing mobs
  - chat
  - PVP
  - admin features
-  - custom admin commands (prefixed by !)
-  - blue colored admin chat
-  - mob spawning with scroll wheel and F12
-    - the client checks your player name against a list of admin names before trying to spawn a mob. This list is hard coded.
-    - because of this, I have implemented text-based admin commands.
+   - custom admin commands (prefixed by !)
+   - blue colored admin chat
+   - mob spawning with scroll wheel and F12
+     - the client checks your player name against a list of admin names before trying to spawn a mob. This list is hard coded.
+     - because of this, I have implemented text-based admin commands.
 
 
 #### Partially Working
  - mob AI
-  - mob movement is not like the original game
-  - mobs show attack animation but deal no damage
+   - mob movement is not like the original game
+   - mobs show attack animation but deal no damage
  - clans
-  - the original game never fully supported clans, but will display a clan name under the player name. It also prevents clanmate pvp. I may add clan support through a text-based chat interface.
+   - the original game never fully supported clans, but will display a clan name under the player name. It also prevents clanmate pvp. I may add clan support through a text-based chat interface.
 
 #### Unimplemented
  - login and registration (the login screen accepts any username and password)
  - account saving
  - admin features
-  - bans
-  - kicks
-  - donor status
+   - bans
+   - kicks
+   - donor status
 
 #### Misc
 If you are an admin:
