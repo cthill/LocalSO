@@ -103,8 +103,8 @@ class AccountServer:
                 write_uint(buff, 0x438 * 10) # spawn x, default is 1080 or 0x438
                 #write_short(buff, 0x12C * 10) # spawn y (the client divides this value by 10), default is 300 or 12C, 0x825 is close to ground
                 write_short(buff, 0x825 * 10)
-                write_ushort(buff, 0x64) # start HP
-                write_ushort(buff, 0x64) # start MP
+                write_ushort(buff, 0x320) # start HP
+                write_ushort(buff, 0x320) # start MP
 
                 # these are probably stats (STR, AGI, VIT, INT, stat_points)
                 write_byte(buff, 0xff) # str
