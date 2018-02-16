@@ -3,6 +3,9 @@ MSG_NOP = 0x11
 
 # from client.py
 MSG_INIT = 0x00
+
+# when the client detects a "hack attempt"
+# the client checksums all of its imortant variables and also does range checks
 MSG_CLIENT_ERROR = 0x10
 
 MSG_PLAYER_DEATH = 0x03
