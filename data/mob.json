@@ -1,0 +1,875 @@
+[
+  {
+    "id": 0,
+    "name": "Blob",
+    "hp": 64,
+    "defense": 0,
+    "speed": 2.3,
+    "width": 23,
+    "height": 22,
+    "x_offset": 11,
+    "y_offset": 0,
+    "scale": 1,
+    "image_speed": 0.2,
+    "image_speed_atk": 0.3,
+    "sprites": [
+      {
+        "id": 8,
+        "frames": 2
+      },
+      {
+        "id": 29,
+        "frames": 1
+      },
+      {
+        "id": 34,
+        "frames": 7
+      },
+      {
+        "id": 29,
+        "frames": 1
+      }
+    ],
+    "avoid_player": false,
+    "atk_stat": 11,
+    "follow_radius": 260,
+    "alarm_2_base": 40,
+    "alarm_2_rand": 15,
+    "timer_atk_base": 30,
+    "timer_atk_rand": 20,
+    "jump_speed": 10,
+    "timer_jump_base": 30,
+    "timer_jump_rand": 5,
+    "knockback_x": 0,
+    "knockback_y": 0,
+    "spawner_neg_y_offset": 0
+  },
+
+  {
+    "id": 1,
+    "name": "Rock Demon",
+    "hp": 260,
+    "defense": 4,
+    "speed": 2,
+    "width": 65,
+    "height": 95,
+    "x_offset": 32,
+    "y_offset": 0,
+    "scale": 1,
+    "image_speed": 0.5,
+    "image_speed_atk": 0.3,
+    "sprites": [
+      {
+        "id": 14,
+        "frames": 8
+      },
+      {
+        "id": 14,
+        "frames": 8
+      },
+      {
+        "id": 16,
+        "frames": 12
+      },
+      {
+        "id": 14,
+        "frames": 8
+      }
+    ],
+    "avoid_player": false,
+    "atk_stat": 33,
+    "follow_radius": 350,
+    "alarm_2_base": 60,
+    "alarm_2_rand": 20,
+    "timer_atk_base": 60,
+    "timer_atk_rand": 20,
+    "jump_speed": 8,
+    "timer_jump_base": 20,
+    "timer_jump_rand": 5,
+    "knockback_x": 7,
+    "knockback_y": -7,
+    "spawner_neg_y_offset": 0
+  },
+
+  {
+    "id": 2,
+    "name": "Big Blob Boss",
+    "hp": 800,
+    "defense": 6,
+    "speed": 2.8,
+    "width": 23,
+    "height": 22,
+    "x_offset": 11,
+    "y_offset": 0,
+    "scale": 3,
+    "image_speed": 0.2,
+    "image_speed_atk": 0.3,
+    "sprites": [
+      {
+        "id": 8,
+        "frames": 2
+      },
+      {
+        "id": 29,
+        "frames": 1
+      },
+      {
+        "id": 34,
+        "frames": 7
+      },
+      {
+        "id": 29,
+        "frames": 1
+      }
+    ],
+    "avoid_player": false,
+    "atk_stat": 30,
+    "follow_radius": 350,
+    "alarm_2_base": 40,
+    "alarm_2_rand": 15,
+    "timer_atk_base": 30,
+    "timer_atk_rand": 20,
+    "jump_speed": 14,
+    "timer_jump_base": 30,
+    "timer_jump_rand": 5,
+    "knockback_x": 0,
+    "knockback_y": 0,
+    "spawner_neg_y_offset": 44
+  },
+
+  {
+    "id": 3,
+    "name": "Bandit",
+    "hp": 160,
+    "defense": 2,
+    "speed": 2.4,
+    "width": 23,
+    "height": 51,
+    "x_offset": 11,
+    "y_offset": 0,
+    "scale": 1,
+    "image_speed": 0.2,
+    "image_speed_atk": 0.2,
+    "sprites": [
+      {
+        "id": 61,
+        "frames": 4
+      },
+      {
+        "id": 63,
+        "frames": 1
+      },
+      {
+        "id": 65,
+        "frames": 3
+      },
+      {
+        "id": 63,
+        "frames": 1
+      }
+    ],
+    "avoid_player": false,
+    "atk_stat": 20,
+    "follow_radius": 200,
+    "alarm_2_base": 25,
+    "alarm_2_rand": 20,
+    "timer_atk_base": 18,
+    "timer_atk_rand": 15,
+    "jump_speed": 10,
+    "timer_jump_base": 30,
+    "timer_jump_rand": 5,
+    "knockback_x": 0,
+    "knockback_y": 0,
+    "spawner_neg_y_offset": 30
+  },
+
+  {
+    "id": 4,
+    "name": "Gift Box",
+    "hp": 1,
+    "defense": 0,
+    "speed": 0,
+    "width": 21,
+    "height": 26,
+    "x_offset": 0,
+    "y_offset": 0,
+    "scale": 1,
+    "image_speed": 0,
+    "image_speed_atk": 0.0,
+    "sprites": [
+      {
+        "id": 79,
+        "frames": 3
+      },
+      {
+        "id": 79,
+        "frames": 3
+      },
+      {
+        "id": 79,
+        "frames": 3
+      },
+      {
+        "id": 79,
+        "frames": 3
+      }
+    ],
+    "avoid_player": false,
+    "atk_stat": 0,
+    "follow_radius": 0,
+    "alarm_2_base": -1,
+    "alarm_2_rand": 0,
+    "timer_atk_base": -1,
+    "timer_atk_rand": 0,
+    "jump_speed": 0,
+    "timer_jump_base": -1,
+    "timer_jump_rand": 0,
+    "knockback_x": 0,
+    "knockback_y": 0,
+    "spawner_neg_y_offset": 0
+  },
+
+  {
+    "id": 5,
+    "name": "Bunny",
+    "hp": 65,
+    "defense": 0,
+    "speed": 5.1,
+    "width": 37,
+    "height": 33,
+    "x_offset": 18,
+    "y_offset": 0,
+    "scale": 1,
+    "image_speed": 0.5,
+    "image_speed_atk": 0.0,
+    "sprites": [
+      {
+        "id": 122,
+        "frames": 6
+      },
+      {
+        "id": 125,
+        "frames": 1
+      },
+      {
+        "id": 33,
+        "frames": 1
+      },
+      {
+        "id": 127,
+        "frames": 1
+      }
+    ],
+    "avoid_player": true,
+    "atk_stat": 0,
+    "follow_radius": 235,
+    "alarm_2_base": 20,
+    "alarm_2_rand": 5,
+    "timer_atk_base": -1,
+    "timer_atk_rand": 0,
+    "jump_speed": 12,
+    "timer_jump_base": 10,
+    "timer_jump_rand": 5,
+    "knockback_x": 0,
+    "knockback_y": 0,
+    "spawner_neg_y_offset": 0
+  },
+
+  {
+    "id": 6,
+    "name": "Easter Egg",
+    "hp": 1,
+    "defense": 0,
+    "speed": 0,
+    "width": 10,
+    "height": 12,
+    "x_offset": 6,
+    "y_offset": 0,
+    "scale": 1,
+    "image_speed": 0,
+    "image_speed_atk": 0.0,
+    "sprites": [
+      {
+        "id": 121,
+        "frames": 4
+      },
+      {
+        "id": 121,
+        "frames": 4
+      },
+      {
+        "id": 121,
+        "frames": 4
+      },
+      {
+        "id": 121,
+        "frames": 4
+      }
+    ],
+    "avoid_player": false,
+    "atk_stat": 0,
+    "follow_radius": 0,
+    "alarm_2_base": -1,
+    "alarm_2_rand": 0,
+    "timer_atk_base": -1,
+    "timer_atk_rand": 0,
+    "jump_speed": 0,
+    "timer_jump_base": -1,
+    "timer_jump_rand": 0,
+    "knockback_x": 0,
+    "knockback_y": 0,
+    "spawner_neg_y_offset": 12
+  },
+
+  {
+    "id": 7,
+    "name": "Bonehead",
+    "hp": 434,
+    "defense": 2,
+    "speed": 3.1,
+    "width": 39,
+    "height": 60,
+    "x_offset": 19,
+    "y_offset": 0,
+    "scale": 1,
+    "image_speed": 0.2,
+    "image_speed_atk": 0.2,
+    "sprites": [
+      {
+        "id": 117,
+        "frames": 7
+      },
+      {
+        "id": 131,
+        "frames": 1
+      },
+      {
+        "id": 119,
+        "frames": 7
+      },
+      {
+        "id": 131,
+        "frames": 1
+      }
+    ],
+    "avoid_player": false,
+    "atk_stat": 29,
+    "follow_radius": 300,
+    "alarm_2_base": 25,
+    "alarm_2_rand": 20,
+    "timer_atk_base": 10,
+    "timer_atk_rand": 10,
+    "jump_speed": 11,
+    "timer_jump_base": 30,
+    "timer_jump_rand": 5,
+    "knockback_x": 0,
+    "knockback_y": 0,
+    "spawner_neg_y_offset": 61
+  },
+
+  {
+    "id": 8,
+    "name": "Sand Fiend",
+    "hp": 1200,
+    "defense": 5,
+    "speed": 3.6,
+    "width": 78,
+    "height": 94,
+    "x_offset": 39,
+    "y_offset": 0,
+    "scale": 1,
+    "image_speed": 0.3,
+    "image_speed_atk": 0.4,
+    "sprites": [
+      {
+        "id": 146,
+        "frames": 6
+      },
+      {
+        "id": 151,
+        "frames": 1
+      },
+      {
+        "id": 147,
+        "frames": 12
+      },
+      {
+        "id": 151,
+        "frames": 1
+      }
+    ],
+    "avoid_player": false,
+    "atk_stat": 59,
+    "follow_radius": 300,
+    "alarm_2_base": 50,
+    "alarm_2_rand": 20,
+    "timer_atk_base": 35,
+    "timer_atk_rand": 25,
+    "jump_speed": 10,
+    "timer_jump_base": 30,
+    "timer_jump_rand": 5,
+    "knockback_x": 0,
+    "knockback_y": 0,
+    "spawner_neg_y_offset": 94
+  },
+
+  {
+    "id": 9,
+    "name": "Cacti",
+    "hp": 544,
+    "defense": 2,
+    "speed": 2.2,
+    "width": 55,
+    "height": 70,
+    "x_offset": 27,
+    "y_offset": 0,
+    "scale": 1,
+    "image_speed": 0.6,
+    "image_speed_atk": 0.3,
+    "sprites": [
+      {
+        "id": 154,
+        "frames": 9
+      },
+      {
+        "id": 156,
+        "frames": 1
+      },
+      {
+        "id": 157,
+        "frames": 7
+      },
+      {
+        "id": 156,
+        "frames": 1
+      }
+    ],
+    "avoid_player": false,
+    "atk_stat": 38,
+    "follow_radius": 280,
+    "alarm_2_base": 30,
+    "alarm_2_rand": 15,
+    "timer_atk_base": 20,
+    "timer_atk_rand": 10,
+    "jump_speed": 12,
+    "timer_jump_base": 14,
+    "timer_jump_rand": 5,
+    "knockback_x": 0,
+    "knockback_y": 0,
+    "spawner_neg_y_offset": 70
+  },
+
+  {
+    "id": 10,
+    "name": "Dark Sage",
+    "hp": 6000,
+    "defense": 12,
+    "speed": 3.0,
+    "width": 75,
+    "height": 101,
+    "x_offset": 37,
+    "y_offset": 4,
+    "scale": 1,
+    "image_speed": 0.4,
+    "image_speed_atk": 0.3,
+    "sprites": [
+      {
+        "id": 168,
+        "frames": 8
+      },
+      {
+        "id": 168,
+        "frames": 8
+      },
+      {
+        "id": 170,
+        "frames": 15
+      },
+      {
+        "id": 168,
+        "frames": 8
+      }
+    ],
+    "avoid_player": false,
+    "atk_stat": 62,
+    "follow_radius": 500,
+    "alarm_2_base": 60,
+    "alarm_2_rand": 25,
+    "timer_atk_base": 20,
+    "timer_atk_rand": 30,
+    "jump_speed": 11,
+    "timer_jump_base": 60,
+    "timer_jump_rand": 5,
+    "knockback_x": 0,
+    "knockback_y": 0,
+    "spawner_neg_y_offset": 101
+  },
+
+  {
+    "id": 11,
+    "name": "Black Bunny",
+    "hp": 85,
+    "defense": 0,
+    "speed": 6.5,
+    "width": 37,
+    "height": 33,
+    "x_offset": 18,
+    "y_offset": 0,
+    "scale": 1,
+    "image_speed": 0.6,
+    "image_speed_atk": 0.0,
+    "sprites": [
+      {
+        "id": 172,
+        "frames": 6
+      },
+      {
+        "id": 174,
+        "frames": 1
+      },
+      {
+        "id": 33,
+        "frames": 1
+      },
+      {
+        "id": 176,
+        "frames": 1
+      }
+    ],
+    "avoid_player": true,
+    "atk_stat": 0,
+    "follow_radius": 225,
+    "alarm_2_base": 20,
+    "alarm_2_rand": 5,
+    "timer_atk_base": -1,
+    "timer_atk_rand": 0,
+    "jump_speed": 12,
+    "timer_jump_base": 10,
+    "timer_jump_rand": 6,
+    "knockback_x": 0,
+    "knockback_y": 0,
+    "spawner_neg_y_offset": 0
+  },
+
+  {
+    "id": 12,
+    "name": "Rock Beast",
+    "hp": 3400,
+    "defense": 6,
+    "speed": 2.4,
+    "width": 165,
+    "height": 88,
+    "x_offset": 82,
+    "y_offset": 7,
+    "scale": 1,
+    "image_speed": 0.3,
+    "image_speed_atk": 0.3,
+    "sprites": [
+      {
+        "id": 185,
+        "frames": 8
+      },
+      {
+        "id": 193,
+        "frames": 1
+      },
+      {
+        "id": 187,
+        "frames": 10
+      },
+      {
+        "id": 193,
+        "frames": 1
+      }
+    ],
+    "avoid_player": false,
+    "atk_stat": 38,
+    "follow_radius": 380,
+    "alarm_2_base": 65,
+    "alarm_2_rand": 50,
+    "timer_atk_base": 15,
+    "timer_atk_rand": 20,
+    "jump_speed": 7,
+    "timer_jump_base": 20,
+    "timer_jump_rand": 5,
+    "knockback_x": 10,
+    "knockback_y": -7,
+    "spawner_neg_y_offset": 20
+  },
+
+  {
+    "id": 13,
+    "name": "Jacko Fiend",
+    "hp": 145,
+    "defense": 0,
+    "speed": 2.5,
+    "width": 47,
+    "height": 61,
+    "x_offset": 23,
+    "y_offset": 24,
+    "scale": 1,
+    "image_speed": 0.24,
+    "image_speed_atk": 0.24,
+    "sprites": [
+      {
+        "id": 200,
+        "frames": 5
+      },
+      {
+        "id": 202,
+        "frames": 1
+      },
+      {
+        "id": 201,
+        "frames": 5
+      },
+      {
+        "id": 202,
+        "frames": 1
+      }
+    ],
+    "avoid_player": false,
+    "atk_stat": 18,
+    "follow_radius": 300,
+    "alarm_2_base": 35,
+    "alarm_2_rand": 15,
+    "timer_atk_base": 25,
+    "timer_atk_rand": 20,
+    "jump_speed": 10,
+    "timer_jump_base": 30,
+    "timer_jump_rand": 5,
+    "knockback_x": 0,
+    "knockback_y": 0,
+    "spawner_neg_y_offset": 55
+  },
+
+  {
+    "id": 14,
+    "name": "Ghost",
+    "hp": 300,
+    "defense": 0,
+    "speed": 3.0,
+    "width": 20,
+    "height": 50,
+    "x_offset": 10,
+    "y_offset": 0,
+    "scale": 1,
+    "image_speed": 0.27,
+    "image_speed_atk": 0.26,
+    "sprites": [
+      {
+        "id": 204,
+        "frames": 4
+      },
+      {
+        "id": 204,
+        "frames": 4
+      },
+      {
+        "id": 205,
+        "frames": 5
+      },
+      {
+        "id": 204,
+        "frames": 4
+      }
+    ],
+    "avoid_player": false,
+    "atk_stat": 20,
+    "follow_radius": 300,
+    "alarm_2_base": 25,
+    "alarm_2_rand": 14,
+    "timer_atk_base": 20,
+    "timer_atk_rand": 10,
+    "jump_speed": 11,
+    "timer_jump_base": 30,
+    "timer_jump_rand": 5,
+    "knockback_x": 4,
+    "knockback_y": -4,
+    "spawner_neg_y_offset": 55
+  },
+
+  {
+    "id": 15,
+    "name": "Deluxe Gift Box",
+    "hp": 1,
+    "defense": 0,
+    "speed": 0,
+    "width": 21,
+    "height": 26,
+    "x_offset": 0,
+    "y_offset": 0,
+    "scale": 1,
+    "image_speed": 0,
+    "image_speed_atk": 0.0,
+    "sprites": [
+      {
+        "id": 229,
+        "frames": 1
+      },
+      {
+        "id": 229,
+        "frames": 1
+      },
+      {
+        "id": 229,
+        "frames": 1
+      },
+      {
+        "id": 229,
+        "frames": 1
+      }
+    ],
+    "avoid_player": false,
+    "atk_stat": 0,
+    "follow_radius": 0,
+    "alarm_2_base": -1,
+    "alarm_2_rand": 0,
+    "timer_atk_base": -1,
+    "timer_atk_rand": 0,
+    "jump_speed": 0,
+    "timer_jump_base": -1,
+    "timer_jump_rand": 0,
+    "knockback_x": 0,
+    "knockback_y": 0,
+    "spawner_neg_y_offset": 0
+  },
+
+  {
+    "id": 16,
+    "name": "Sand Fiend",
+    "hp": 150000,
+    "defense": 10,
+    "speed": 3.2,
+    "width": 78,
+    "height": 94,
+    "x_offset": 39,
+    "y_offset": 0,
+    "scale": 3,
+    "image_speed": 0.3,
+    "image_speed_atk": 0.4,
+    "sprites": [
+      {
+        "id": 146,
+        "frames": 6
+      },
+      {
+        "id": 151,
+        "frames": 1
+      },
+      {
+        "id": 147,
+        "frames": 12
+      },
+      {
+        "id": 151,
+        "frames": 1
+      }
+    ],
+    "avoid_player": false,
+    "atk_stat": 100,
+    "follow_radius": 600,
+    "alarm_2_base": 70,
+    "alarm_2_rand": 45,
+    "timer_atk_base": 30,
+    "timer_atk_rand": 32,
+    "jump_speed": 18,
+    "timer_jump_base": 80,
+    "timer_jump_rand": 30,
+    "knockback_x": 16,
+    "knockback_y": -12,
+    "spawner_neg_y_offset": 282
+  },
+
+  {
+    "id": 17,
+    "name": "Bandit Assassin",
+    "hp": 1700,
+    "defense": 4,
+    "speed": 4,
+    "width": 23,
+    "height": 51,
+    "x_offset": 11,
+    "y_offset": 0,
+    "scale": 1,
+    "image_speed": 0.2,
+    "image_speed_atk": 0.2,
+    "sprites": [
+      {
+        "id": 234,
+        "frames": 4
+      },
+      {
+        "id": 235,
+        "frames": 1
+      },
+      {
+        "id": 236,
+        "frames": 3
+      },
+      {
+        "id": 235,
+        "frames": 1
+      }
+    ],
+    "avoid_player": false,
+    "atk_stat": 30,
+    "follow_radius": 300,
+    "alarm_2_base": 15,
+    "alarm_2_rand": 10,
+    "timer_atk_base": 10,
+    "timer_atk_rand": 5,
+    "jump_speed": 12,
+    "timer_jump_base": 20,
+    "timer_jump_rand": 5,
+    "knockback_x": 0,
+    "knockback_y": 0,
+    "spawner_neg_y_offset": 30
+  },
+
+  {
+    "id": 18,
+    "name": "Snowman",
+    "hp": 80000,
+    "defense": 6,
+    "speed": 3,
+    "width": 69,
+    "height": 131,
+    "x_offset": 34,
+    "y_offset": 12,
+    "scale": 2,
+    "image_speed": 0.3,
+    "image_speed_atk": 0.25,
+    "sprites": [
+      {
+        "id": 243,
+        "frames": 3
+      },
+      {
+        "id": 244,
+        "frames": 1
+      },
+      {
+        "id": 245,
+        "frames": 14
+      },
+      {
+        "id": 244,
+        "frames": 1
+      }
+    ],
+    "avoid_player": false,
+    "atk_stat": 60,
+    "follow_radius": 700,
+    "alarm_2_base": 85,
+    "alarm_2_rand": 40,
+    "timer_atk_base": 70,
+    "timer_atk_rand": 75,
+    "jump_speed": 18,
+    "timer_jump_base": 100,
+    "timer_jump_rand": 30,
+    "knockback_x": 0,
+    "knockback_y": 0,
+    "spawner_neg_y_offset": 238
+  }
+]
