@@ -4,14 +4,10 @@ import logging
 import signal
 import sys
 
-from web_server import run as web_server_run
-from account_server import AccountServer
-from game_server import GameServer
-
-INTERFACE = '0.0.0.0'
-PORT_ACCOUNT = 3104
-PORT_GAME = 3105
-PORT_HTTP = 80
+import config
+from server.web_server import run as web_server_run
+from server.account_server import AccountServer
+from server.game_server import GameServer
 
 class StickOnlineMaster:
 
@@ -19,11 +15,11 @@ class StickOnlineMaster:
         self.pending_game_server_connections = {}
 
     def start_server(self):
-        self.account_server = AccountServer(INTERFACE, PORT_ACCOUNT, self)
+        self.account_server = AccountServer(config.INTERFACE, config.PORT_ACCOUNT, self)
         t = threading.Thread(target=self.account_server)
         t.start()
 
-        self.game_server = GameServer(INTERFACE, PORT_GAME, self)
+        self.game_server = GameServer(config.INTERFACE, config.PORT_GAME, self)
         t = threading.Thread(target=self.game_server)
         t.start()
 
@@ -63,5 +59,5 @@ if __name__ == '__main__':
     m_stick_online_master = StickOnlineMaster()
     m_stick_online_master.start_server()
 
-    t = threading.Thread(target=web_server_run, args=(INTERFACE, PORT_HTTP))
+    t = threading.Thread(target=web_server_run, args=(config.INTERFACE_HTTP, config.PORT_HTTP))
     t.start()

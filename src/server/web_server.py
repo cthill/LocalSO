@@ -1,8 +1,9 @@
+import base64
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
+import logging
 import SocketServer
 
-import base64
-import logging
+import config
 
 class WebServer(BaseHTTPRequestHandler):
     def _set_headers(self, status_code):
@@ -13,7 +14,7 @@ class WebServer(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == '/download/v2/Announcements.txt':
             self._set_headers(200)
-            self.wfile.write('Welcome to the private server.')
+            self.wfile.write(config.MENU_MOTD)
 
         elif self.path == '/download/v2/UpdateList.sul':
             self._set_headers(200)

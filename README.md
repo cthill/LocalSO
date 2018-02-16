@@ -1,15 +1,15 @@
 # LocalSO
 A cross platform Stick Online server emulator written in Python
 
+#### What Is LocalSO?
+LocalSO is a reimplementation of the original Stick Online game server. It is compatible with the original unmodified Stick Online client version 0.0227.
+
 #### What Is Stick Online?
 Stick Online was a small multiplayer online role playing game from the late 2000's. The servers were shut down many years ago. The game was built using GameMaker and was popular among member of the GameMaker Community. More info and the original client can be found at [stick-online.com](http://stick-online.com).
 
 I am in no way affiliated with Stick Online or Team Stick Online.
 
 ![In game screenshot](media/screenshot_2.PNG)
-
-#### What Is LocalSO?
-LocalSO is a reimplementation of the original Stick Online game server. It is compatible with the original unmodified Stick Online client version 0.0227.
 
 #### Server Requirements
  - Python 2.7

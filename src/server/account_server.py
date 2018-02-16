@@ -4,20 +4,10 @@ import socket
 import threading
 import traceback
 
+from net import packet
 from net.buffer import *
 from net.socket import tcp_write
-from util.util import buff_to_str
-
-# packet headers
-MSG_REGISTER = 0x00
-MSG_LOGIN = 0x01
-MSG_SAVE = 0x03
-
-RESP_ACCEPT = 0x01
-RESP_DENY = 0x02
-RESP_DENY_WRONG_VERSION = 0x03
-RESP_SAVE_SUCCESS = 0x03
-
+from util import buff_to_str
 
 class AccountServer:
     def __init__(self, interface, port, master):
@@ -65,9 +55,9 @@ class AccountServer:
         logging.info("Account server client %s:%s data: %s" % (addr[0], addr[1], buff_to_str(data)))
 
         header = data[0]
-        if header == MSG_REGISTER:
+        if header == packet.MSG_REGISTER:
             logging.info('Account server register message')
-        elif header == MSG_LOGIN:
+        elif header == packet.MSG_LOGIN:
             user_len = size - 62
 
             offset = 1
@@ -92,7 +82,7 @@ class AccountServer:
             banned = False
 
             if banned:
-                write_byte(buff, RESP_DENY)
+                write_byte(buff, packet.RESP_DENY)
                 write_string(buff, 'You have been banned.')
             else:
                 clan = ''#'clan1'
@@ -108,7 +98,7 @@ class AccountServer:
                 self.master.add_pending_game_server_connection(addr[0], client_data)
                 self.counter += 1
 
-                write_byte(buff, RESP_ACCEPT)
+                write_byte(buff, packet.RESP_ACCEPT)
 
                 write_uint(buff, 0x438 * 10) # spawn x, default is 1080 or 0x438
                 #write_short(buff, 0x12C * 10) # spawn y (the client divides this value by 10), default is 300 or 12C, 0x825 is close to ground
@@ -170,8 +160,8 @@ class AccountServer:
 
             tcp_write(conn, buff, enc=True)
 
-        elif header == MSG_SAVE:
-            tcp_write(conn, [RESP_SAVE_SUCCESS], enc=True)
+        elif header == packet.MSG_SAVE:
+            tcp_write(conn, [packet.RESP_SAVE_SUCCESS], enc=True)
 
         else:
             logging.info('Account server got unknown packet %s' % buff_to_str(data))

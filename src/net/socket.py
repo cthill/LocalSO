@@ -16,11 +16,6 @@ def tcp_write(conn, data, enc=False):
     conn.send(payload_str)
     # logging.info("TCP wrote (enc=%s) %s" % (enc, buff_to_str(data)))
 
-def tcp_write_multiple(conn, data, enc=False):
-    for d in data:
-        tcp_write(conn, d, enc)
-
-
 def udp_write(sock, addr, data, enc=False):
     data_enc = bytearray(data)
     if enc:

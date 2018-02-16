@@ -3,13 +3,13 @@ import math
 import time
 
 import config
-from config import mail
-from config import packet
-from gmk.bounding_box import BoundingBox
+from mailbox import mail_header
+from net import packet
+from bounding_box import BoundingBox
 from mailbox import Mailbox
-from mob.spawner import MobSpawner
+from spawner import MobSpawner
 from net.buffer import *
-from util.util import ceildiv
+from util import ceildiv
 
 
 
@@ -23,10 +23,10 @@ class WorldSection:
         self.solid_blocks.append(block)
 
 class World(Mailbox):
-    def __init__(self, server, event_scheduler):
+    def __init__(self, game_server, event_scheduler):
         super(World, self).__init__()
 
-        self.server = server
+        self.game_server = game_server
         self.event_scheduler = event_scheduler
         self.solid_blocks = []
         self.sections = []
@@ -61,7 +61,7 @@ class World(Mailbox):
         # create the mob spawners
         for i in range(len(config.MOB_SPAWN)):
             spawner_data = config.MOB_SPAWN[i]
-            new_spawner = MobSpawner(i, spawner_data, self.server, self)
+            new_spawner = MobSpawner(i, spawner_data, self.game_server, self)
             self.mob_spawn.append(new_spawner)
 
 
@@ -132,15 +132,15 @@ class World(Mailbox):
             header = mail_message[0]
             payload = mail_message[1]
 
-            if header == mail.MSG_HIT_MOB:
+            if header == mail_header.MSG_HIT_MOB:
                 mob_id = payload[0]
                 if mob_id in self.mobs:
                     self.mobs[mob_id].hit(*payload[1:])
-            elif header == mail.MSG_ADD_MOB:
+            elif header == mail_header.MSG_ADD_MOB:
                 mob = payload
                 self.mobs[mob.id] = mob
 
-            elif header == mail.MSG_DELETE_MOB:
+            elif header == mail_header.MSG_DELETE_MOB:
                 self._remove_mob(payload)
 
     def _step(self):
@@ -159,7 +159,7 @@ class World(Mailbox):
                 if mob.broadcast_death:
                     buff = [packet.RESP_MOB_DEATH]
                     write_uint(buff, mob.id)
-                    self.server.broadcast_local(buff, mob.section)
+                    self.game_server.broadcast_local(buff, mob.section)
             else:
                 mob.step()
 
@@ -169,7 +169,7 @@ class World(Mailbox):
 
         # broadcast mob updates
         # first find each client
-        for client in self.server.clients:
+        for client in self.game_server.clients:
             # then get the client's nearby sections
             local_sections = self.get_local_sections(client.section)
             for section in local_sections:

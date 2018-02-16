@@ -5,14 +5,12 @@ import sys
 import threading
 
 import config
-from client import Client
-from event.event_scheduler import EventScheduler
-from gmk.world import World
+from client.client import Client
+from event import EventScheduler
+from world.world import World
+from net import packet
 from net.buffer import *
-from util.util import buff_to_str
-
-RESP_CLIENT_DISCONNECT = 0x03
-RESP_CHAT = 0x06
+from util import buff_to_str
 
 class GameServer:
     def __init__(self, interface, port, master):
@@ -83,7 +81,7 @@ class GameServer:
     def client_disconnect(self, client):
         client_id = self.client_to_id[client]
 
-        buff = [RESP_CLIENT_DISCONNECT]
+        buff = [packet.RESP_CLIENT_DISCONNECT]
         write_ushort(buff, client_id)
         self.broadcast(buff, exclude=client)
 
@@ -129,7 +127,7 @@ class GameServer:
                     client.send_tcp_message(d)
 
     def ev_ping_all_clients(self):
-        buff = [0x17] # this packet is ignored by the client (but will reset the connection timeout)
+        buff = [packet.MSG_NOP] # this packet is ignored by the client (but will reset the connection timeout)
         self.broadcast(buff)
 
     def get_clients(self):
