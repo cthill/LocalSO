@@ -1,6 +1,8 @@
 # LocalSO
 A cross platform Stick Online server emulator written in Python
 
+![In game screenshot](media/screenshot_2.PNG)
+
 #### What Is Stick Online?
 Stick Online was a small multiplayer online role playing game from the late 2000's. The servers were shut down many years ago. The game was built using GameMaker and was popular among member of the GameMaker Community. More info and the original client can be found at [stick-online.com](http://stick-online.com).
 
