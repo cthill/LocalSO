@@ -218,6 +218,7 @@ class Client(Mailbox):
             print 'sound id %s knockback_x %s, knockback_y %s' % (sound_id, knockback_x, knockback_y)
 
             # damage = 3 # for testing
+            damage = damage * config.PLAYER_DAMAGE_MULTIPLIER
 
             # notify the world that we hit a mob
             self.world.send_mail_message(mail_header.MSG_HIT_MOB, (mob_id, damage, knockback_x, knockback_y))
