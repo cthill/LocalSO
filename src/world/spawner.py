@@ -2,14 +2,14 @@ import math
 from random import randint
 
 import config
-from config import mail
+from mailbox import mail_header
 from mob import Mob
 
 class MobSpawner:
-    def __init__(self, mob_spawn_id, spawner_data, server, world):
+    def __init__(self, mob_spawn_id, spawner_data, game_server, world):
         self.mob_spawn_id = mob_spawn_id
         self.spawner_data = spawner_data
-        self.server = server
+        self.game_server = game_server
         self.world = world
 
         self.mob_type = self.spawner_data['mob_type']
@@ -25,7 +25,7 @@ class MobSpawner:
             if (len(self.mobs) < self.spawner_data['max_of_type'] * config.MOB_SPAWN_COUNT_MAX_MULTIPLIER):
                 self._do_spawn()
 
-            normalized_instance_count = 0.9 + (len(self.server.clients) * 7.0) / 100.0
+            normalized_instance_count = 0.9 + (len(self.game_server.clients) * 7.0) / 100.0
             self.time_till_next_spawn = round(((self.spawner_data['base_interval'] + randint(0, self.spawner_data['random_interval']))  / normalized_instance_count) / config.MOB_SPAWN_RATE_MULTIPLIER)
             if self.time_till_next_spawn < 0:
                 self.time_till_next_spawn = 0
@@ -59,7 +59,7 @@ class MobSpawner:
         new_mob_y = self.spawner_data['y'] - config.MOB_DATA[mob_type_to_spawn]['spawner_neg_y_offset']
         new_mob = Mob(new_mob_id, mob_type_to_spawn, new_mob_x, new_mob_y, self, self.world)
 
-        self.world.send_mail_message(mail.MSG_ADD_MOB, new_mob)
+        self.world.send_mail_message(mail_header.MSG_ADD_MOB, new_mob)
         self.mobs.add(new_mob)
         self.mob_id_counter += 1
 

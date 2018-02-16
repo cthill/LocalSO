@@ -1,17 +1,12 @@
 from random import randint
 
 import config
-from gmk.bounding_box import BoundingBox
-from config import ROOM_SPEED, WORLD_WIDTH, WORLD_HEIGHT, packet
+from bounding_box import BoundingBox
+from net import packet
 from net.buffer import *
-from util.util import ceildiv
+from util import ceildiv
 
-gravity = 1
-terminal_velocity = 14
 xspeed_knockback_decay = 1
-
-
-
 SPRITE_INDEX_WALK = 0
 SPRITE_INDEX_STAND = 1
 SPRITE_INDEX_ATTACK = 2
@@ -122,10 +117,10 @@ class Mob():
                 # self._set_sprite(SPRITE_INDEX_JUMP)
 
 
-        # gravity
-        self.yspeed += gravity
-        if self.yspeed > terminal_velocity:
-            self.yspeed = terminal_velocity
+        # config.WORLD_GRAVITY
+        self.yspeed += config.WORLD_GRAVITY
+        if self.yspeed > config.WORLD_TERMINAL_VELOCITY:
+            self.yspeed = config.WORLD_TERMINAL_VELOCITY
 
         # reduce xspeed
         if self.xspeed_knockback > 0:
@@ -157,12 +152,12 @@ class Mob():
             self.x += self.xspeed + self.xspeed_knockback
         if self.x < 0:
             self.x = 0
-        elif self.x > WORLD_WIDTH:
-            self.x = WORLD_WIDTH
+        elif self.x > config.WORLD_WIDTH:
+            self.x = config.WORLD_WIDTH
 
         # move y
         self.y += self.yspeed
-        if self.y - self.y_offset > WORLD_HEIGHT + 300:
+        if self.y - self.y_offset > config.WORLD_HEIGHT + 300:
             self._die(broadcast_death=False)
             return
         elif self.y < 0:
@@ -176,7 +171,7 @@ class Mob():
         touching = self.world.solid_block_at(bbox)
 
         if len(touching) > 0:
-            min_touching_y = WORLD_HEIGHT
+            min_touching_y = config.WORLD_HEIGHT
 
             for solid_block in touching:
                 if solid_block.y < min_touching_y:

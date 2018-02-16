@@ -2,28 +2,24 @@ import logging
 import threading
 import traceback
 
+import command
 import config
-from config import packet
-from config import mail
-from gmk.bounding_box import BoundingBox
+from net import packet
+from world.bounding_box import BoundingBox
+from mailbox import mail_header
 from mailbox import Mailbox
-from mob.mob import Mob
+from world.mob import Mob
 from net.buffer import *
-from net.socket import tcp_write, tcp_write_multiple
-from util.util import buff_to_str
-
-MASK_WIDTH = 28
-MASK_HEIGHT = 54
-OFFSET_X = 14
-OFFSET_Y = 0
+from net.socket import tcp_write
+from util import buff_to_str
 
 class Client(Mailbox):
 
-    def __init__(self, server, world, socket, id, client_data):
+    def __init__(self, game_server, world, socket, id, client_data):
         super(Client, self).__init__()
 
         # setup params
-        self.server = server
+        self.game_server = game_server
         self.world = world
         self.socket = socket
         self.id = id
@@ -55,7 +51,11 @@ class Client(Mailbox):
         self.send_tcp_message(buff)
 
     def send_tcp_message(self, data):
-        self.send_mail_message(mail.MSG_CLIENT_SEND_TCP, data)
+        self.send_mail_message(mail_header.MSG_CLIENT_SEND_TCP, data)
+
+    def send_tcp_message_multiple(self, packets):
+        for data in packets:
+            self.send_mail_message(mail_header.MSG_CLIENT_SEND_TCP, data)
 
 
     def start(self):
@@ -69,7 +69,12 @@ class Client(Mailbox):
 
         # write number of players online
         buff = [packet.RESP_NUM_PLAYERS]
-        write_ushort(buff, self.server.get_num_players())
+        write_ushort(buff, self.game_server.get_num_players())
+        self.send_tcp_message(buff)
+
+        buff = [packet.RESP_CHAT]
+        write_string(buff, config.GAME_MOTD)
+        write_byte(buff, 2)
         self.send_tcp_message(buff)
 
         # self.world.event_scheduler.schedule_event_recurring(self.send_dmg, 10)
@@ -80,7 +85,7 @@ class Client(Mailbox):
                 mail_message = self._get_mail_message_blocking()
                 header = mail_message[0]
                 payload = mail_message[1]
-                if header == mail.MSG_CLIENT_SEND_TCP:
+                if header == mail_header.MSG_CLIENT_SEND_TCP:
                     tcp_write(self.socket, payload)
 
         except Exception as e:
@@ -109,7 +114,7 @@ class Client(Mailbox):
         if not self.terminated:
             self.terminated = True
             self.world.client_disconnect(self)
-            self.server.client_disconnect(self)
+            self.game_server.client_disconnect(self)
             self.socket.close()
             logging.info('Client %s disconnected' % self)
 
@@ -150,30 +155,27 @@ class Client(Mailbox):
             buff = [packet.RESP_NEW_PLAYER]
             write_ushort(buff, self.id)
             buff.extend(data[2:])
-            self.server.broadcast(buff, exclude=self)
+            self.game_server.broadcast(buff, exclude=self)
 
             # tell self of all other players in area
-            msgs = []
-            for other_client in self.server.get_clients():
+            for other_client in self.game_server.get_clients():
                 if other_client is self:
                     continue
 
                 buff = [packet.RESP_NEW_PLAYER]
                 other_client.write_full_client_data(buff)
-                msgs.append(buff)
-
-            tcp_write_multiple(self.socket, msgs)
+                self.send_tcp_message(buff)
 
         elif header == packet.MSG_PLAYER_DEATH:
             buff = [packet.RESP_PLAYER_DEATH]
             write_uint(buff, self.id)
-            self.server.broadcast(buff)
+            self.game_server.broadcast(buff)
 
         elif header == packet.MSG_OTHER_PLAYER_NOT_FOUND:
             client_id = read_ushort(data, 2)
-            if client_id not in self.server.id_to_client:
+            if client_id not in self.game_server.id_to_client:
                 return
-            other_client = self.server.id_to_client[client_id]
+            other_client = self.game_server.id_to_client[client_id]
 
             buff = [packet.RESP_NEW_PLAYER]
             other_client.write_full_client_data(buff)
@@ -182,11 +184,11 @@ class Client(Mailbox):
         elif header == packet.MSG_PVP_HIT_PLAYER:
             other_player_id = read_ushort(data, 2)
             print 'Client %s try hit player %s' % (self, other_player_id)
-            if other_player_id in self.server.id_to_client:
+            if other_player_id in self.game_server.id_to_client:
                 buff = [packet.RESP_DMG_PLAYER]
                 buff.extend(data[2:])
                 print 'Client %s hit player' % self
-                self.server.broadcast(buff, exclude=self)
+                self.game_server.broadcast(buff, exclude=self)
 
         elif header == packet.MSG_CHAT:
             offset = 2
@@ -195,13 +197,13 @@ class Client(Mailbox):
             chat_type = read_byte(data, offset)
 
             if self.admin == 0xfa and message.strip().startswith('!'):
-                self._handle_admin_command(message)
+                command.handle_admin_command(self, message)
                 return
 
             buff = [packet.RESP_CHAT]
             write_string(buff, "%s: %s" % (self.name, message))
             write_byte(buff, chat_type)
-            self.server.broadcast(buff)
+            self.game_server.broadcast(buff)
 
         elif header == packet.MSG_HIT_MOB:
             mob_id = read_ushort(data, 2) # mob id
@@ -213,7 +215,7 @@ class Client(Mailbox):
             print 'sound id %s knockback_x %s, knockback_y %s' % (sound_id, knockback_x, knockback_y)
 
             # notify the world that we hit a mob
-            self.world.send_mail_message(mail.MSG_HIT_MOB, (mob_id, damage, knockback_x, knockback_y))
+            self.world.send_mail_message(mail_header.MSG_HIT_MOB, (mob_id, damage, knockback_x, knockback_y))
 
             # broadcast the hit out
             buff = [packet.RESP_HIT_MOB]
@@ -221,7 +223,7 @@ class Client(Mailbox):
             write_ushort(buff, damage)
             write_byte(buff, invincible_frames)
             write_ushort(buff, sound_id)
-            self.server.broadcast(buff)
+            self.game_server.broadcast(buff)
 
         elif header == packet.MSG_CLIENT_ERROR:
             error_code = read_short(data, 2)
@@ -242,12 +244,12 @@ class Client(Mailbox):
             write_ushort(buff, new_hat)
             write_byte(buff, self.admin)
             write_byte(buff, pvp_enabled)
-            self.server.broadcast(buff, exclude=self)
+            self.game_server.broadcast(buff, exclude=self)
 
         elif header == packet.MSG_GET_NUM_PLAYERS:
             # write number of players online
             buff = [packet.RESP_NUM_PLAYERS]
-            write_ushort(buff, self.server.get_num_players())
+            write_ushort(buff, self.game_server.get_num_players())
             self.send_tcp_message(buff)
 
         elif header == packet.MSG_SPAWN_MOB:
@@ -260,7 +262,7 @@ class Client(Mailbox):
             # logging.info('Client %s wants to spawn %s at (%s,%s)' % (self, mob_type, x, y))
 
             new_mob = Mob(self.world.generate_mob_id(), mob_type, x, y, None, self.world)
-            self.world.send_mail_message(mail.MSG_ADD_MOB, new_mob)
+            self.world.send_mail_message(mail_header.MSG_ADD_MOB, new_mob)
 
         elif header == packet.MSG_LEVEL_UP:
             new_level = read_byte(data, 2)
@@ -268,7 +270,7 @@ class Client(Mailbox):
             buff = [packet.RESP_LEVEL_UP]
             write_string(buff, self.name)
             write_byte(buff, new_level)
-            self.server.broadcast(buff)
+            self.game_server.broadcast(buff)
 
         else:
             logging.info('Client %s unknown packet %s' % (self, buff_to_str(data)))
@@ -307,7 +309,7 @@ class Client(Mailbox):
             logging.info('Active sections: %s' % (self.world.get_active_sections()))
 
     def get_bbox(self):
-        return BoundingBox(self.x - OFFSET_X, self.y - OFFSET_Y, MASK_WIDTH, MASK_HEIGHT)
+        return BoundingBox(self.x - config.PLAYER_OFFSET_X, self.y - config.PLAYER_OFFSET_Y, config.PLAYER_MASK_WIDTH, config.PLAYER_MASK_HEIGHT)
 
     def handle_udp_packet(self, data):
         header = data[0]
@@ -332,63 +334,11 @@ class Client(Mailbox):
                 elif self.x_speed > 0:
                     self.facing_right = True
 
-            self.server.broadcast(data, exclude=self)
+            self.game_server.broadcast(data, exclude=self)
 
         elif header == packet.MSG_UDP_PING:
             buff = [packet.RESP_PING]
             self.send_tcp_message(buff)
-
-    def _handle_admin_command(self, command):
-        cleaned = command.strip()[1:]
-        tokens = cleaned.split(' ')
-
-        if tokens[0] == 'spawnall':
-            for mob in config.MOB_DATA:
-                new_mob = Mob(self.world.generate_mob_id(), mob['id'], self.x, self.y - 300, None, self.world)
-                self.world.send_mail_message(mail.MSG_ADD_MOB, new_mob)
-
-        elif tokens[0] == 'spawn':
-            try:
-                mob_id = int(tokens[1])
-                amount = 1
-                if len(tokens) > 2:
-                    amount = int(tokens[2])
-                if mob_id < len(config.MOB_DATA) and amount > 0:
-                    for i in range(amount):
-                        new_mob = Mob(self.world.generate_mob_id(), mob_id, self.x, self.y - 300, None, self.world)
-                        self.world.send_mail_message(mail.MSG_ADD_MOB, new_mob)
-                else:
-                    self._bad_command()
-            except Exception:
-                self._bad_command()
-
-        elif tokens[0] == 'hurtall':
-            for mob_id in self.world.mobs.keys():
-                mob = self.world.mobs[mob_id]
-                mob.hp = 1
-
-        elif tokens[0] == 'killall':
-            for mob_id in self.world.mobs.keys():
-                mob = self.world.mobs[mob_id]
-                mob.hit(mob.hp + mob.defense)
-
-        else:
-            self._bad_command()
-
-
-    def _bad_command(self):
-        lines = [
-            "Available commands:"
-            " spawnall,"
-            " spawn <mob_id> <amount>"
-        ]
-        packets = []
-        for line in lines:
-            buff = [packet.MSG_CHAT]
-            write_string(buff, line)
-            write_byte(buff, 2)
-            packets.append(buff)
-        tcp_write_multiple(self.socket, packets)
 
     def __str__(self):
         return '(%s, %s)' % (self.id, self.name)
