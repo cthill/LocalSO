@@ -94,20 +94,17 @@ class Mob():
         ground_below = len(self.world.solid_block_at(bbox_below)) > 0
 
         # atk
-        self.timers['atk'] -= 1
-        if self.timers['atk'] == 0:
-            self.set_reset_timer('atk')
-            if ground_below:
-                search_radius = ceildiv(int(round(self.mob_dat['follow_radius'] / 2.0)), config.WORLD_SECTION_WIDTH)
-                to_atk = self.world.find_player_nearest(x_as_int, section_radius=search_radius)
-                if to_atk is not None and abs(to_atk.x - self.x) < self.mob_dat['follow_radius'] / 2.0:
-                    self._set_sprite(SPRITE_INDEX_ATTACK)
-                    self.timers['atk'] += ceildiv(float(self.sprite['frames']), self.mob_dat['image_speed_atk'])
+        if not self.mob_dat['avoid_player']:
+            self.timers['atk'] -= 1
+            if self.timers['atk'] == 0:
+                self.set_reset_timer('atk')
+                if ground_below:
+                    search_radius = ceildiv(int(round(self.mob_dat['follow_radius'] / 2.0)), config.WORLD_SECTION_WIDTH)
+                    to_atk = self.world.find_player_nearest(x_as_int, section_radius=search_radius)
+                    if to_atk is not None and abs(to_atk.x - self.x) < self.mob_dat['follow_radius'] / 2.0:
+                        self._set_sprite(SPRITE_INDEX_ATTACK)
+                        self.timers['atk'] += ceildiv(float(self.sprite['frames']), self.mob_dat['image_speed_atk'])
 
-
-
-        if self.sprite_index == SPRITE_INDEX_ATTACK and self.image_index >= self.sprite['frames']:
-            self.sprite_index = SPRITE_INDEX_STAND
 
 
         # jump
@@ -117,18 +114,11 @@ class Mob():
 
             if side_collide and ground_below and self.sprite_index != SPRITE_INDEX_ATTACK:
                 self.yspeed = -self.mob_dat['jump_speed']
-                # self._set_sprite(SPRITE_INDEX_JUMP)
-
-
-        # config.WORLD_GRAVITY
-        self.yspeed += config.WORLD_GRAVITY
-        if self.yspeed > config.WORLD_TERMINAL_VELOCITY:
-            self.yspeed = config.WORLD_TERMINAL_VELOCITY
-
+                self._set_sprite(SPRITE_INDEX_JUMP)
 
 
         # xspeed
-        if self.sprite_index == SPRITE_INDEX_WALK:
+        if self.sprite_index == SPRITE_INDEX_WALK or self.sprite_index == SPRITE_INDEX_JUMP:
             if self.direction > 0:
                 self.xspeed = self.base_speed
             else:
@@ -136,51 +126,32 @@ class Mob():
         elif self.sprite_index == SPRITE_INDEX_STAND or self.sprite_index == SPRITE_INDEX_ATTACK:
             self.xspeed = 0
 
+
+        # move in x and y
+        # if self.sprite_index != SPRITE_INDEX_ATTACK:
         if self.xspeed_knockback != 0:
             self._move_xspeed_check_side_collide(self.xspeed_knockback)
-            # if self.xspeed_knockback > 0:
-            #     self.xspeed_knockback -= xspeed_knockback_decay
-            #     if self.xspeed_knockback < 0:
-            #         self.xspeed_knockback = 0
-            # elif self.xspeed_knockback < 0:
-            #     self.xspeed_knockback += xspeed_knockback_decay
-            #     if self.xspeed_knockback > 0:
-            #         self.xspeed_knockback = 0
         else:
             self._move_xspeed_check_side_collide(self.xspeed)
 
-        # move y
-        self.y += self.yspeed
-        if self.y - self.y_offset > config.WORLD_HEIGHT + 300:
-            self._die(broadcast_death=False)
-            return
-        elif self.y < 0:
-            self.y = 0
-
-        x_as_int = int(round(self.x))
-        y_as_int = int(round(self.y))
-        bbox = BoundingBox(x_as_int - self.x_offset, y_as_int - self.y_offset, self.w, self.h)
-        touching = self.world.solid_block_at(bbox)
-
-        if len(touching) > 0:
-            min_touching_y = config.WORLD_HEIGHT
-
-            for solid_block in touching:
-                if solid_block.y < min_touching_y:
-                    min_touching_y = solid_block.y
-
-            self.y = min_touching_y - self.h + self.y_offset
-
-            if abs(self.xspeed_knockback) > 0:
-                self.xspeed_knockback = 0
+        self._move_yspeed_check_ground_collide()
 
         self.update_world_position(self.x, self.y)
 
         # sprite animation code
+        self._do_animation()
+
+
+    def _do_animation(self):
+        if self.sprite_index == SPRITE_INDEX_ATTACK and self.image_index >= self.sprite['frames']:
+            self._set_sprite(SPRITE_INDEX_STAND)
+
         if self.sprite_index == SPRITE_INDEX_ATTACK:
             self.image_index += self.mob_dat['image_speed_atk']
         else:
             self.image_index += self.mob_dat['image_speed']
+
+
 
     def _move_xspeed_check_side_collide(self, xspeed):
         for i in reversed(range(1, abs(int(round(xspeed))) + 1)):
@@ -206,6 +177,36 @@ class Mob():
                     self.x = self.x - i
                     break
 
+    def _move_yspeed_check_ground_collide(self):
+        # gravity
+        self.yspeed += config.WORLD_GRAVITY
+        if self.yspeed > config.WORLD_TERMINAL_VELOCITY:
+            self.yspeed = config.WORLD_TERMINAL_VELOCITY
+
+        # move y
+        self.y += self.yspeed
+        if self.y - self.y_offset > config.WORLD_HEIGHT + 300:
+            self._die(broadcast_death=False)
+            return
+        elif self.y < 0:
+            self.y = 0
+
+        x_as_int = int(round(self.x))
+        y_as_int = int(round(self.y))
+        bbox = BoundingBox(x_as_int - self.x_offset, y_as_int - self.y_offset, self.w, self.h)
+        touching = self.world.solid_block_at(bbox)
+
+        if len(touching) > 0:
+            min_touching_y = config.WORLD_HEIGHT
+
+            for solid_block in touching:
+                if solid_block.y < min_touching_y:
+                    min_touching_y = solid_block.y
+
+            self.y = min_touching_y - self.h + self.y_offset
+
+            self.xspeed_knockback = 0
+
     def hit(self, damage, knockback_x, knockback_y):
         if self.dead:
             return
@@ -226,7 +227,7 @@ class Mob():
                 return 0
 
         val = float(val)
-        result = val - math.floor(val * (self.mob_dat['knockback_resist']) * 10.0) / 10.0
+        result = val - math.floor(val * (self.mob_dat['knockback_resist'] / 100.0) * 10.0) / 10.0
         if val >= 0 and result < 3:
             if val >= 3 and result < 3:
                 result = 3
@@ -266,7 +267,7 @@ class Mob():
 
         write_ushort(buff, self.sprite['id']) # sprite
         write_short(buff, (int(self.image_index) % self.sprite['frames']) * 100) # image_index
-        write_short(buff, int(self.mob_dat['image_speed'] * 100)) # image speed
+        write_short(buff, int((self.mob_dat['image_speed_atk'] if self.sprite_index == SPRITE_INDEX_ATTACK else self.mob_dat['image_speed']) * 100)) # image speed
 
         if self.xspeed_knockback != 0:
             write_short(buff, int(round(self.xspeed_knockback * 10)))
