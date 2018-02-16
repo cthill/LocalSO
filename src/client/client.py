@@ -187,7 +187,10 @@ class Client(Mailbox):
             if other_player_id in self.game_server.id_to_client:
                 buff = [packet.RESP_DMG_PLAYER]
                 buff.extend(data[2:])
-                print 'Client %s hit player' % self
+
+                knockback_x = read_short(data, 9) / 10.0
+                knockback_y = read_short(data, 11) / 10.0
+                print 'Client %s hit player kbx %s kby %s' % (self, knockback_x, knockback_y)
                 self.game_server.broadcast(buff, exclude=self)
 
         elif header == packet.MSG_CHAT:
@@ -213,6 +216,8 @@ class Client(Mailbox):
             knockback_x = read_short(data, 9) / 10.0
             knockback_y = read_short(data, 11) / 10.0
             print 'sound id %s knockback_x %s, knockback_y %s' % (sound_id, knockback_x, knockback_y)
+
+            # damage = 3 # for testing
 
             # notify the world that we hit a mob
             self.world.send_mail_message(mail_header.MSG_HIT_MOB, (mob_id, damage, knockback_x, knockback_y))
@@ -303,7 +308,7 @@ class Client(Mailbox):
 
         if old_section != new_section:
             self.section = new_section
-            self.world.update_client_section(self, old_section, new_section)
+            self.world.send_mail_message(mail_header.UPDATE_CLIENT_SECTION, (self, old_section, new_section))
 
             logging.info('Client %s new section %s' % (self, new_section))
             logging.info('Active sections: %s' % (self.world.get_active_sections()))

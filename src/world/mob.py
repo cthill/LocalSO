@@ -1,12 +1,15 @@
+import math
 from random import randint
 
 import config
 from bounding_box import BoundingBox
+from mailbox import mail_header
 from net import packet
 from net.buffer import *
 from util import ceildiv
 
-xspeed_knockback_decay = 1
+# xspeed_knockback_decay = 1
+xspeed_knockback_div = 3
 SPRITE_INDEX_WALK = 0
 SPRITE_INDEX_STAND = 1
 SPRITE_INDEX_ATTACK = 2
@@ -122,15 +125,7 @@ class Mob():
         if self.yspeed > config.WORLD_TERMINAL_VELOCITY:
             self.yspeed = config.WORLD_TERMINAL_VELOCITY
 
-        # reduce xspeed
-        if self.xspeed_knockback > 0:
-            self.xspeed_knockback -= xspeed_knockback_decay
-            if self.xspeed_knockback < 0:
-                self.xspeed_knockback = 0
-        elif self.xspeed_knockback < 0:
-            self.xspeed_knockback += xspeed_knockback_decay
-            if self.xspeed_knockback > 0:
-                self.xspeed_knockback = 0
+
 
         # xspeed
         if self.sprite_index == SPRITE_INDEX_WALK:
@@ -141,19 +136,18 @@ class Mob():
         elif self.sprite_index == SPRITE_INDEX_STAND or self.sprite_index == SPRITE_INDEX_ATTACK:
             self.xspeed = 0
 
-        x_plus_speed_as_int = int(round(self.x + self.xspeed + self.xspeed_knockback))
-        y_as_int = int(round(self.y))
-
-        bbox_side = BoundingBox(x_plus_speed_as_int - self.x_offset, y_as_int - self.y_offset, self.w, self.h)
-        side_collide = len(self.world.solid_block_at(bbox_side)) > 0
-
-        # move x
-        if not side_collide:
-            self.x += self.xspeed + self.xspeed_knockback
-        if self.x < 0:
-            self.x = 0
-        elif self.x > config.WORLD_WIDTH:
-            self.x = config.WORLD_WIDTH
+        if self.xspeed_knockback != 0:
+            self._move_xspeed_check_side_collide(self.xspeed_knockback)
+            # if self.xspeed_knockback > 0:
+            #     self.xspeed_knockback -= xspeed_knockback_decay
+            #     if self.xspeed_knockback < 0:
+            #         self.xspeed_knockback = 0
+            # elif self.xspeed_knockback < 0:
+            #     self.xspeed_knockback += xspeed_knockback_decay
+            #     if self.xspeed_knockback > 0:
+            #         self.xspeed_knockback = 0
+        else:
+            self._move_xspeed_check_side_collide(self.xspeed)
 
         # move y
         self.y += self.yspeed
@@ -162,8 +156,6 @@ class Mob():
             return
         elif self.y < 0:
             self.y = 0
-
-        self.update_world_position(self.x, self.y)
 
         x_as_int = int(round(self.x))
         y_as_int = int(round(self.y))
@@ -179,11 +171,40 @@ class Mob():
 
             self.y = min_touching_y - self.h + self.y_offset
 
+            if abs(self.xspeed_knockback) > 0:
+                self.xspeed_knockback = 0
+
+        self.update_world_position(self.x, self.y)
+
         # sprite animation code
         if self.sprite_index == SPRITE_INDEX_ATTACK:
             self.image_index += self.mob_dat['image_speed_atk']
         else:
             self.image_index += self.mob_dat['image_speed']
+
+    def _move_xspeed_check_side_collide(self, xspeed):
+        for i in reversed(range(1, abs(int(round(xspeed))) + 1)):
+            if xspeed > 0:
+                x_plus_speed_as_int = int(round(self.x + i))
+                y_as_int = int(round(self.y))
+
+                bbox_side = BoundingBox(x_plus_speed_as_int - self.x_offset, y_as_int - self.y_offset, self.w, self.h)
+                side_collide = len(self.world.solid_block_at(bbox_side)) > 0
+
+                if not side_collide and x_plus_speed_as_int < config.WORLD_WIDTH:
+                    self.x = self.x + i
+                    break
+
+            else:
+                x_plus_speed_as_int = int(round(self.x - i))
+                y_as_int = int(round(self.y))
+
+                bbox_side = BoundingBox(x_plus_speed_as_int - self.x_offset, y_as_int - self.y_offset, self.w, self.h)
+                side_collide = len(self.world.solid_block_at(bbox_side)) > 0
+
+                if not side_collide and x_plus_speed_as_int > 0:
+                    self.x = self.x - i
+                    break
 
     def hit(self, damage, knockback_x, knockback_y):
         if self.dead:
@@ -196,8 +217,28 @@ class Mob():
         if self.hp <= 0:
             self._die()
 
-        self.yspeed += knockback_y
-        self.xspeed_knockback = knockback_x
+        self.yspeed += self._normalize_knockback_value(knockback_y)
+        self.xspeed_knockback = self._normalize_knockback_value(knockback_x) / xspeed_knockback_div
+
+    def _normalize_knockback_value(self, val):
+        if self.mob_dat['immune_knockback_atk']:
+            if self.sprite_index == SPRITE_INDEX_ATTACK and self.image_index >= self.mob_dat['immune_knockback_delay']:
+                return 0
+
+        val = float(val)
+        result = val - math.floor(val * (self.mob_dat['knockback_resist']) * 10.0) / 10.0
+        if val >= 0 and result < 3:
+            if val >= 3 and result < 3:
+                result = 3
+            else:
+                result = 0
+        elif val < 0 and result > -3:
+            if val <= -3 and result > -3:
+                result = -3
+            else:
+                result = 0
+
+        return result
 
     def update_world_position(self, x, y):
         self.x = x
@@ -208,7 +249,7 @@ class Mob():
 
         if old_section != new_section:
             self.section = new_section
-            self.world.update_mob_section(self, old_section, new_section)
+            self.world.send_mail_message(mail_header.UPDATE_MOB_SECTION, (self, old_section, new_section))
 
     def get_status_packet(self):
         # send mob info

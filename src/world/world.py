@@ -84,7 +84,7 @@ class World(Mailbox):
     def get_clients_in_section(self, section):
         return self.section_to_clients[section]
 
-    def update_client_section(self, client, old_section, new_section):
+    def _update_client_section(self, client, old_section, new_section):
         if old_section in self.section_to_clients:
             self.section_to_clients[old_section].remove(client)
             if len(self.section_to_clients[old_section]) == 0:
@@ -94,7 +94,7 @@ class World(Mailbox):
             self.section_to_clients[new_section].add(client)
             self.active_sections.add(new_section)
 
-    def update_mob_section(self, mob, old_section, new_section):
+    def _update_mob_section(self, mob, old_section, new_section):
         if old_section in self.section_to_mobs:
             self.section_to_mobs[old_section].remove(mob)
 
@@ -142,6 +142,12 @@ class World(Mailbox):
 
             elif header == mail_header.MSG_DELETE_MOB:
                 self._remove_mob(payload)
+
+            elif header == mail_header.UPDATE_MOB_SECTION:
+                self._update_mob_section(*payload)
+
+            elif header == mail_header.UPDATE_CLIENT_SECTION:
+                self._update_client_section(*payload)
 
     def _step(self):
         self._process_mail_messages()

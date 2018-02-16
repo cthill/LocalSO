@@ -42,6 +42,9 @@
     "timer_jump_rand": 5,
     "knockback_x": 0,
     "knockback_y": 0,
+    "immune_knockback_atk": false,
+    "immune_knockback_delay": -1,
+    "knockback_resist": 0,
     "spawner_neg_y_offset": 0
   },
 
@@ -88,6 +91,9 @@
     "timer_jump_rand": 5,
     "knockback_x": 7,
     "knockback_y": -7,
+    "immune_knockback_atk": false,
+    "immune_knockback_delay": -1,
+    "knockback_resist": 30,
     "spawner_neg_y_offset": 0
   },
 
@@ -134,6 +140,9 @@
     "timer_jump_rand": 5,
     "knockback_x": 0,
     "knockback_y": 0,
+    "immune_knockback_atk": false,
+    "immune_knockback_delay": -1,
+    "knockback_resist": 45,
     "spawner_neg_y_offset": 44
   },
 
@@ -180,6 +189,9 @@
     "timer_jump_rand": 5,
     "knockback_x": 0,
     "knockback_y": 0,
+    "immune_knockback_atk": false,
+    "immune_knockback_delay": -1,
+    "knockback_resist": 10,
     "spawner_neg_y_offset": 30
   },
 
@@ -226,6 +238,9 @@
     "timer_jump_rand": 0,
     "knockback_x": 0,
     "knockback_y": 0,
+    "immune_knockback_atk": false,
+    "immune_knockback_delay": -1,
+    "knockback_resist": 0,
     "spawner_neg_y_offset": 0
   },
 
@@ -272,6 +287,9 @@
     "timer_jump_rand": 5,
     "knockback_x": 0,
     "knockback_y": 0,
+    "immune_knockback_atk": false,
+    "immune_knockback_delay": -1,
+    "knockback_resist": 0,
     "spawner_neg_y_offset": 0
   },
 
@@ -318,6 +336,9 @@
     "timer_jump_rand": 0,
     "knockback_x": 0,
     "knockback_y": 0,
+    "immune_knockback_atk": false,
+    "immune_knockback_delay": -1,
+    "knockback_resist": 0,
     "spawner_neg_y_offset": 12
   },
 
@@ -364,6 +385,9 @@
     "timer_jump_rand": 5,
     "knockback_x": 0,
     "knockback_y": 0,
+    "immune_knockback_atk": false,
+    "immune_knockback_delay": -1,
+    "knockback_resist": 15,
     "spawner_neg_y_offset": 61
   },
 
@@ -410,6 +434,9 @@
     "timer_jump_rand": 5,
     "knockback_x": 0,
     "knockback_y": 0,
+    "immune_knockback_atk": false,
+    "immune_knockback_delay": -1,
+    "knockback_resist": 50,
     "spawner_neg_y_offset": 94
   },
 
@@ -456,6 +483,9 @@
     "timer_jump_rand": 5,
     "knockback_x": 0,
     "knockback_y": 0,
+    "immune_knockback_atk": false,
+    "immune_knockback_delay": -1,
+    "knockback_resist": 25,
     "spawner_neg_y_offset": 70
   },
 
@@ -502,6 +532,9 @@
     "timer_jump_rand": 5,
     "knockback_x": 0,
     "knockback_y": 0,
+    "immune_knockback_atk": false,
+    "immune_knockback_delay": -1,
+    "knockback_resist": 90,
     "spawner_neg_y_offset": 101
   },
 
@@ -548,6 +581,9 @@
     "timer_jump_rand": 6,
     "knockback_x": 0,
     "knockback_y": 0,
+    "immune_knockback_atk": false,
+    "immune_knockback_delay": -1,
+    "knockback_resist": 0,
     "spawner_neg_y_offset": 0
   },
 
@@ -594,6 +630,9 @@
     "timer_jump_rand": 5,
     "knockback_x": 10,
     "knockback_y": -7,
+    "immune_knockback_atk": false,
+    "immune_knockback_delay": -1,
+    "knockback_resist": 95,
     "spawner_neg_y_offset": 20
   },
 
@@ -640,6 +679,9 @@
     "timer_jump_rand": 5,
     "knockback_x": 0,
     "knockback_y": 0,
+    "immune_knockback_atk": false,
+    "immune_knockback_delay": -1,
+    "knockback_resist": 0,
     "spawner_neg_y_offset": 55
   },
 
@@ -686,6 +728,9 @@
     "timer_jump_rand": 5,
     "knockback_x": 4,
     "knockback_y": -4,
+    "immune_knockback_atk": false,
+    "immune_knockback_delay": -1,
+    "knockback_resist": 0,
     "spawner_neg_y_offset": 55
   },
 
@@ -732,6 +777,9 @@
     "timer_jump_rand": 0,
     "knockback_x": 0,
     "knockback_y": 0,
+    "immune_knockback_atk": false,
+    "immune_knockback_delay": -1,
+    "knockback_resist": 0,
     "spawner_neg_y_offset": 0
   },
 
@@ -778,6 +826,9 @@
     "timer_jump_rand": 30,
     "knockback_x": 16,
     "knockback_y": -12,
+    "immune_knockback_atk": true,
+    "immune_knockback_delay": 5,
+    "knockback_resist": 99,
     "spawner_neg_y_offset": 282
   },
 
@@ -824,6 +875,9 @@
     "timer_jump_rand": 5,
     "knockback_x": 0,
     "knockback_y": 0,
+    "immune_knockback_atk": false,
+    "immune_knockback_delay": -1,
+    "knockback_resist": 20,
     "spawner_neg_y_offset": 30
   },
 
@@ -870,6 +924,9 @@
     "timer_jump_rand": 30,
     "knockback_x": 0,
     "knockback_y": 0,
+    "immune_knockback_atk": true,
+    "immune_knockback_delay": 5,
+    "knockback_resist": 99,
     "spawner_neg_y_offset": 238
   }
 ]
