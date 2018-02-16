@@ -1,0 +1,126 @@
+[
+  {
+    "mob_type": 12,
+    "special_spawn_type": -1,
+    "special_spawn_chance": 100,
+    "max_of_type": 20,
+    "base_interval": 700,
+    "random_interval": 140,
+    "x_min": 0,
+    "x_max": 2000,
+    "y": 2120
+  },
+
+
+  {
+    "mob_type": 0,
+    "special_spawn_type": -1,
+    "special_spawn_chance": 100,
+    "max_of_type": 7,
+    "base_interval": 700,
+    "random_interval": 140,
+    "x_min": 6600,
+    "x_max": 11330,
+    "y": 2120
+  },
+  {
+    "mob_type": 1,
+    "special_spawn_type": 12,
+    "special_spawn_chance": 65,
+    "max_of_type": 2,
+    "base_interval": 1360,
+    "random_interval": 400,
+    "x_min": 14200,
+    "x_max": 14300,
+    "y": 1360
+  },
+  {
+    "mob_type": 0,
+    "special_spawn_type": -1,
+    "special_spawn_chance": 100,
+    "max_of_type": 6,
+    "base_interval": 1000,
+    "random_interval": 200,
+    "x_min": 17085,
+    "x_max": 20000,
+    "y": 2120
+  },
+  {
+    "mob_type": 0,
+    "special_spawn_type": -1,
+    "special_spawn_chance": 100,
+    "max_of_type": 5,
+    "base_interval": 1200,
+    "random_interval": 300,
+    "x_min": 20340,
+    "x_max": 22700,
+    "y": 2120
+  },
+  {
+    "mob_type": 3,
+    "special_spawn_type": 17,
+    "special_spawn_chance": 45,
+    "max_of_type": 5,
+    "base_interval": 950,
+    "random_interval": 225,
+    "x_min": 25088,
+    "x_max": 26624,
+    "y": 2000
+  },
+  {
+    "mob_type": 3,
+    "special_spawn_type": 17,
+    "special_spawn_chance": 45,
+    "max_of_type": 5,
+    "base_interval": 950,
+    "random_interval": 225,
+    "x_min": 28589,
+    "x_max": 29357,
+    "y": 2000
+  },
+
+  {
+    "mob_type": 9,
+    "special_spawn_type": -1,
+    "special_spawn_chance": 100,
+    "max_of_type": 5,
+    "base_interval": 1000,
+    "random_interval": 200,
+    "x_min": 39660,
+    "x_max": 41765,
+    "y": 2000
+  },
+  {
+    "mob_type": 7,
+    "special_spawn_type": -1,
+    "special_spawn_chance": 100,
+    "max_of_type": 7,
+    "base_interval": 600,
+    "random_interval": 100,
+    "x_min": 42832,
+    "x_max": 44566,
+    "y": 2000
+  },
+  {
+    "mob_type": 7,
+    "special_spawn_type": -1,
+    "special_spawn_chance": 100,
+    "max_of_type": 5,
+    "base_interval": 800,
+    "random_interval": 200,
+    "x_min": 45604,
+    "x_max": 47285,
+    "y": 2000
+  },
+  {
+    "mob_type": 9,
+    "special_spawn_type": 8,
+    "special_spawn_chance": 4,
+    "max_of_type": 5,
+    "base_interval": 3000,
+    "random_interval": 400,
+    "x_min": 50750,
+    "x_max": 58450,
+    "y": 2000
+  }
+]
