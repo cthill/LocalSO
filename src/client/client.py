@@ -11,7 +11,7 @@ from mailbox import Mailbox
 from world.mob import Mob
 from net.buffer import *
 from net.socket import tcp_write
-from util import buff_to_str
+from util import buff_to_str, dist
 
 class Client(Mailbox):
 
@@ -162,9 +162,10 @@ class Client(Mailbox):
                 if other_client is self:
                     continue
 
-                buff = [packet.RESP_NEW_PLAYER]
-                other_client.write_full_client_data(buff)
-                self.send_tcp_message(buff)
+                if dist(self.x, self.y, other_client.x, other_client.y) < config.PLAYER_STATUS_BROADCAST_RADIUS:
+                    buff = [packet.RESP_NEW_PLAYER]
+                    other_client.write_full_client_data(buff)
+                    self.send_tcp_message(buff)
 
         elif header == packet.MSG_PLAYER_DEATH:
             buff = [packet.RESP_PLAYER_DEATH]
@@ -173,13 +174,13 @@ class Client(Mailbox):
 
         elif header == packet.MSG_OTHER_PLAYER_NOT_FOUND:
             client_id = read_ushort(data, 2)
-            if client_id not in self.game_server.id_to_client:
-                return
-            other_client = self.game_server.id_to_client[client_id]
+            if client_id in self.game_server.id_to_client:
+                other_client = self.game_server.id_to_client[client_id]
 
-            buff = [packet.RESP_NEW_PLAYER]
-            other_client.write_full_client_data(buff)
-            self.send_tcp_message(buff)
+                if dist(self.x, self.y, other_client.x, other_client.y) < config.PLAYER_STATUS_BROADCAST_RADIUS:
+                    buff = [packet.RESP_NEW_PLAYER]
+                    other_client.write_full_client_data(buff)
+                    self.send_tcp_message(buff)
 
         elif header == packet.MSG_PVP_HIT_PLAYER:
             other_player_id = read_ushort(data, 2)
@@ -320,8 +321,6 @@ class Client(Mailbox):
     def handle_udp_packet(self, data):
         header = data[0]
         if header == packet.MSG_UDP_PLAYER_POS_CHANGE or header == packet.MSG_UDP_PLAYER_SPRITE_CHANGE:
-            # TODO: only broadcast this info to local players
-
             # client_id = read_uint(data, 1)
             new_x = read_int(data, 3) / 10.0
             new_y = read_short(data, 7) / 10.0
@@ -340,7 +339,14 @@ class Client(Mailbox):
                 elif self.x_speed > 0:
                     self.facing_right = True
 
-            self.game_server.broadcast(data, exclude=self)
+            # self.game_server.broadcast(data, exclude=self)
+            # only broadcast to nearby players
+            for other_client in self.game_server.get_clients():
+                if other_client is self:
+                    continue
+
+                if dist(self.x, self.y, other_client.x, other_client.y) < config.PLAYER_STATUS_BROADCAST_RADIUS:
+                    other_client.send_tcp_message(data)
 
         elif header == packet.MSG_UDP_PING:
             buff = [packet.RESP_PING]
