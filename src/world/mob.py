@@ -57,6 +57,10 @@ class Mob():
 
         self.broadcast_death = True
 
+        if self.mob_type == 4 or self.mob_type == 6 or self.mob_type == 15:
+            self.image_index = randint(0, self.sprite['frames'] - 1)
+            self.direction = 1
+
     def state_machine(self):
         if self.state_time > 0:
             self.state_time -= 1
@@ -81,6 +85,14 @@ class Mob():
         if self.dead:
             return
 
+        # presents and easter eggs
+        if self.mob_type == 4 or self.mob_type == 6 or self.mob_type == 15:
+            self._step_passive()
+        else:
+            self._step_active()
+
+
+    def _step_active(self):
         self.state_machine()
 
         x_plus_speed_as_int = int(round(self.x + self.xspeed))
@@ -114,11 +126,14 @@ class Mob():
 
             if side_collide and ground_below and self.sprite_index != SPRITE_INDEX_ATTACK:
                 self.yspeed = -self.mob_dat['jump_speed']
-                self._set_sprite(SPRITE_INDEX_JUMP)
+                if self.direction > 0:
+                    self.xspeed = self.base_speed
+                else:
+                    self.xspeed = -self.base_speed
 
 
         # xspeed
-        if self.sprite_index == SPRITE_INDEX_WALK or self.sprite_index == SPRITE_INDEX_JUMP:
+        if self.sprite_index == SPRITE_INDEX_WALK: #or self.sprite_index == SPRITE_INDEX_JUMP:
             if self.direction > 0:
                 self.xspeed = self.base_speed
             else:
@@ -138,8 +153,11 @@ class Mob():
 
         self.update_world_position(self.x, self.y)
 
-        # sprite animation code
         self._do_animation()
+
+    def _step_passive(self):
+        self._move_yspeed_check_ground_collide()
+        self.update_world_position(self.x, self.y)
 
 
     def _do_animation(self):
@@ -204,8 +222,12 @@ class Mob():
                     min_touching_y = solid_block.y
 
             self.y = min_touching_y - self.h + self.y_offset
-
             self.xspeed_knockback = 0
+            self.yspeed = 0
+        else:
+            pass
+            # print 'setsrpint jump'
+            # self._set_sprite(SPRITE_INDEX_JUMP)
 
     def hit(self, damage, knockback_x, knockback_y):
         if self.dead:
