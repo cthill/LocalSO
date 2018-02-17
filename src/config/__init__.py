@@ -6,8 +6,6 @@ from util import ceildiv
 INTERFACE = '0.0.0.0'
 INTERFACE_HTTP = '0.0.0.0'
 PORT_HTTP = 80
-GAME_MOTD = 'Welcome to LocalSO!'
-MENU_MOTD = 'Welcome to LocalSO!'
 
 # Change these parameters if you want a different experience from the original game
 MOB_SPAWN_RATE_MULTIPLIER = 2.0 # (default = 1.0) change this number to increase or decrease the mob spawn rate
@@ -15,6 +13,10 @@ MOB_SPAWN_COUNT_MAX_MULTIPLIER = 2 # (default = 1) change this number to increas
 MOB_SPAWN_SPECIAL_RATE_MULTIPLIER = 1.0 # (default = 1.0)
 MOB_SPAWN_BUNNY_RATE_MULTIPLIER = 1.0 # (default = 1.0)
 PLAYER_DAMAGE_MULTIPLIER = 1.0 # (default = 1.0)
+
+# message of the day
+GAME_MOTD = 'Welcome to LocalSO! Current rates are %sx mob spawn, %sx mob count, %s player damage.' % (MOB_SPAWN_RATE_MULTIPLIER, MOB_SPAWN_COUNT_MAX_MULTIPLIER, PLAYER_DAMAGE_MULTIPLIER)
+MENU_MOTD = 'Welcome to LocalSO! Current rates are %sx mob spawn, %sx mob count, %s player damage.' % (MOB_SPAWN_RATE_MULTIPLIER, MOB_SPAWN_COUNT_MAX_MULTIPLIER, PLAYER_DAMAGE_MULTIPLIER)
 
 # Do not change these parameters, modifying them may cause bugs or performance issues
 PORT_ACCOUNT = 3104
