@@ -49,9 +49,8 @@ class Mob():
         self.defense = self.mob_dat['defense']
         self.dead = False
 
-        self.state_time = 0
-
         self.timers = {}
+        self.set_reset_timer('walk')
         self.set_reset_timer('atk')
         self.set_reset_timer('jump')
 
@@ -61,23 +60,10 @@ class Mob():
             self.image_index = randint(0, self.sprite['frames'] - 1)
             self.direction = 1
 
-        self.client_aggrov = None
         self.dmg_bbox = None
         self.players_hit = set()
         self.atk_length_steps = 0
         self.atk_delay_steps = 0
-
-    def state_machine(self):
-        if self.state_time > 0:
-            self.state_time -= 1
-        else:
-            if self.sprite_index == SPRITE_INDEX_WALK:
-                self._set_sprite(SPRITE_INDEX_STAND)
-                self.state_time = randint(config.ROOM_SPEED * 1, config.ROOM_SPEED * 3)
-            elif self.sprite_index == SPRITE_INDEX_STAND:
-                self._set_sprite(SPRITE_INDEX_WALK)
-                self.state_time = randint(config.ROOM_SPEED * 3, config.ROOM_SPEED * 6)
-                self.direction = -1 if randint(0, 1) == 0 else 1
 
     def set_reset_timer(self, timer):
         self.timers[timer] = self.mob_dat['timer_%s_base' % timer] + randint(0, self.mob_dat['timer_%s_rand' % timer])
@@ -100,10 +86,11 @@ class Mob():
         else:
             self._step_active()
 
+    def _step_passive(self):
+        self._move_yspeed_check_ground_collide()
+        self.update_world_position(self.x, self.y)
 
     def _step_active(self):
-        self.state_machine()
-
         x_plus_speed_as_int = int(round(self.x + self.xspeed))
         x_as_int = int(round(self.x))
         y_as_int = int(round(self.y))
@@ -114,24 +101,13 @@ class Mob():
         bbox_below = BoundingBox(x_as_int - self.x_offset, y_as_int - self.y_offset + 1, self.w, self.h)
         ground_below = len(self.world.solid_block_at(bbox_below)) > 0
 
-        # atk
-        self._atk_step(ground_below, x_as_int)
-
-        # jump
-        self.timers['jump'] -= 1
-        if self.timers['jump'] == 0:
-            self.set_reset_timer('jump')
-
-            if side_collide and ground_below and self.sprite_index != SPRITE_INDEX_ATTACK:
-                self.yspeed = -self.mob_dat['jump_speed']
-                if self.direction > 0:
-                    self.xspeed = self.base_speed
-                else:
-                    self.xspeed = -self.base_speed
-
+        # walk, jump, atk
+        self._walk_step()
+        self._atk_step(ground_below)
+        self._jump_step(side_collide, ground_below)
 
         # xspeed
-        if self.sprite_index == SPRITE_INDEX_WALK: #or self.sprite_index == SPRITE_INDEX_JUMP:
+        if self.sprite_index == SPRITE_INDEX_WALK:
             if self.direction > 0:
                 self.xspeed = self.base_speed
             else:
@@ -139,9 +115,7 @@ class Mob():
         elif self.sprite_index == SPRITE_INDEX_STAND or self.sprite_index == SPRITE_INDEX_ATTACK:
             self.xspeed = 0
 
-
         # move in x and y
-        # if self.sprite_index != SPRITE_INDEX_ATTACK:
         if self.xspeed_knockback != 0:
             self._move_xspeed_check_side_collide(self.xspeed_knockback)
         else:
@@ -153,66 +127,52 @@ class Mob():
 
         self._do_animation()
 
-    def _step_passive(self):
-        self._move_yspeed_check_ground_collide()
-        self.update_world_position(self.x, self.y)
-
-
-    def _do_animation(self):
-        if self.sprite_index == SPRITE_INDEX_ATTACK and self.image_index >= self.sprite['frames']:
-            self._set_sprite(SPRITE_INDEX_STAND)
-
-        if self.sprite_index == SPRITE_INDEX_ATTACK:
-            self.image_index += self.mob_dat['image_speed_atk']
+    def _walk_step(self):
+        if self.timers['walk'] > 0:
+            self.timers['walk'] -= 1
         else:
-            self.image_index += self.mob_dat['image_speed']
+            if self.sprite_index != SPRITE_INDEX_ATTACK:
+                self.set_reset_timer('walk')
+                search_radius = ceildiv(int(round(self.mob_dat['follow_radius'])), config.WORLD_SECTION_WIDTH)
+                # the original game didn't multiply the search radius by 2, but I find it makes the mobs feel much more lively
+                client_aggrov = self.world.find_player_nearest(self.get_bbox().hcenter(), section_radius=search_radius * 2)
+                if client_aggrov is not None and dist(self.x, self.y, client_aggrov.x, client_aggrov.y) <= self.mob_dat['follow_radius'] * 2:
+                    if client_aggrov.get_bbox().hcenter() <= self.get_bbox().hcenter():
+                        self._set_sprite(SPRITE_INDEX_WALK)
+                        self.direction = -1
+                    else:
+                        self._set_sprite(SPRITE_INDEX_WALK)
+                        self.direction = 1
+                    if self.mob_dat['avoid_player']:
+                        self.direction = -self.direction
+                else:
+                    self._set_sprite(SPRITE_INDEX_STAND)
+                    # the original game didn't do this, but I find it makes the mobs feel much more lively
+                    self.timers['walk'] /= 4
 
-    def _hit_player(self, client):
-        if not client.god_mode:
-            buff = [packet.RESP_DMG_PLAYER]
-            write_ushort(buff, client.id)
-            write_ushort(buff, self.mob_dat['atk_stat'])
-            write_byte(buff, 30)
-            write_ushort(buff, config.HIT_SOUND_ID)
-            write_short(buff, self.mob_dat['knockback_x'] * self.direction * 10)
-            write_short(buff, self.mob_dat['knockback_y'] * 10)
-            self.world.game_server.broadcast(buff)
+            else:
+                self.timers['walk'] = 1
 
-    def _atk_step(self, ground_below, x_as_int):
+    def _jump_step(self, side_collide, ground_below):
+        self.timers['jump'] -= 1
+        if self.timers['jump'] == 0:
+            self.set_reset_timer('jump')
+
+            if side_collide and ground_below and self.sprite_index != SPRITE_INDEX_ATTACK:
+                self.yspeed = -self.mob_dat['jump_speed']
+                if self.direction > 0:
+                    self.xspeed = self.base_speed
+                else:
+                    self.xspeed = -self.base_speed
+
+    def _atk_step(self, ground_below):
         if self.mob_dat['avoid_player']:
             return
 
         self.timers['atk'] -= 1
         if self.timers['atk'] > 0:
             if self.dmg_bbox is not None:
-                if self.atk_delay_steps > 0:
-                    self.atk_delay_steps -= 1
-                else:
-                    if self.atk_length_steps > 0:
-                        self.atk_length_steps -= 1
-                        if len(self.players_hit) < self.mob_dat['players_hit_per_atk']:
-                            search_radius = ceildiv(int(round(self.mob_dat['follow_radius'])), config.WORLD_SECTION_WIDTH)
-                            facing_right = self.direction == 1
-                            if facing_right:
-                                x_search = self.get_bbox().right()
-                            else:
-                                x_search = self.get_bbox().left()
-                            section = self.world.find_section_index(x_search)
-                            sections_to_search = self.world.get_local_sections(section, section_radius=search_radius)
-
-                            clients_to_test = []
-                            for section in sections_to_search:
-                                clients_to_test.extend(self.world.get_clients_in_section(section))
-
-                            for client in clients_to_test:
-                                if client not in self.players_hit and self.dmg_bbox.check_collision(client.get_bbox()):
-                                    self._hit_player(client)
-                                    self.players_hit.add(client)
-                        else:
-                            self.dmg_bbox = None
-                    else:
-                        self.dmg_bbox = None
-
+                self._do_atk()
         else:
             if ground_below and self.xspeed_knockback == 0:
                 search_radius = ceildiv(int(round(self.mob_dat['follow_radius'])), config.WORLD_SECTION_WIDTH)
@@ -222,9 +182,9 @@ class Mob():
                 else:
                     x_search = self.get_bbox().left()
 
-                self.client_aggrov = self.world.find_player_nearest(x_search, section_radius=search_radius)
-                if self.client_aggrov is not None and dist(self.x, self.y, self.client_aggrov.x, self.client_aggrov.y) < self.mob_dat['follow_radius'] / 2.0:
-                    ca_bbox = self.client_aggrov.get_bbox()
+                client_aggrov = self.world.find_player_nearest(x_search, section_radius=search_radius)
+                if client_aggrov is not None and dist(self.x, self.y, client_aggrov.x, client_aggrov.y) < self.mob_dat['follow_radius'] / 2.0:
+                    ca_bbox = client_aggrov.get_bbox()
                     if facing_right:
                         if ca_bbox.hcenter() >= self.get_bbox().hcenter():
                             if ca_bbox.left() + (ca_bbox.right() - ca_bbox.left()) / 2 >= self.get_bbox().left() + (self.get_bbox().right() - self.get_bbox().left()) / 2 + self.mob_dat['dmg_box_x']:
@@ -239,7 +199,6 @@ class Mob():
             self.set_reset_timer('atk')
             if self.sprite_index == SPRITE_INDEX_ATTACK:
                 self.timers['atk'] += ceildiv(float(self.sprite['frames']), self.mob_dat['image_speed_atk'])
-
 
     def _init_atk(self):
         self._set_sprite(SPRITE_INDEX_ATTACK)
@@ -257,6 +216,46 @@ class Mob():
         self.players_hit = set()
         self.atk_delay_steps = ceildiv(self.mob_dat['atk_delay_frames'], self.mob_dat['image_speed_atk'])
         self.atk_length_steps = self.mob_dat['atk_length_steps']
+
+    def _do_atk(self):
+        if self.atk_delay_steps > 0:
+            self.atk_delay_steps -= 1
+        else:
+            if self.atk_length_steps > 0:
+                self.atk_length_steps -= 1
+                if len(self.players_hit) < self.mob_dat['players_hit_per_atk']:
+                    search_radius = ceildiv(int(round(self.mob_dat['follow_radius'])), config.WORLD_SECTION_WIDTH)
+                    facing_right = self.direction == 1
+                    if facing_right:
+                        x_search = self.get_bbox().right()
+                    else:
+                        x_search = self.get_bbox().left()
+                    section = self.world.find_section_index(x_search)
+                    sections_to_search = self.world.get_local_sections(section, section_radius=search_radius)
+
+                    clients_to_test = []
+                    for section in sections_to_search:
+                        clients_to_test.extend(self.world.get_clients_in_section(section))
+
+                    for client in clients_to_test:
+                        if client not in self.players_hit and self.dmg_bbox.check_collision(client.get_bbox()):
+                            self._hit_player(client)
+                            self.players_hit.add(client)
+                else:
+                    self.dmg_bbox = None
+            else:
+                self.dmg_bbox = None
+
+    def _hit_player(self, client):
+        if not client.god_mode:
+            buff = [packet.RESP_DMG_PLAYER]
+            write_ushort(buff, client.id)
+            write_ushort(buff, self.mob_dat['atk_stat'])
+            write_byte(buff, 30)
+            write_ushort(buff, config.HIT_SOUND_ID)
+            write_short(buff, self.mob_dat['knockback_x'] * self.direction * 10)
+            write_short(buff, self.mob_dat['knockback_y'] * 10)
+            self.world.game_server.broadcast(buff)
 
     def _move_xspeed_check_side_collide(self, xspeed):
         for i in reversed(range(1, abs(int(round(xspeed))) + 1)):
@@ -315,6 +314,15 @@ class Mob():
             pass
             # print 'setsrpint jump'
             # self._set_sprite(SPRITE_INDEX_JUMP)
+
+    def _do_animation(self):
+        if self.sprite_index == SPRITE_INDEX_ATTACK and self.image_index >= self.sprite['frames']:
+            self._set_sprite(SPRITE_INDEX_STAND)
+
+        if self.sprite_index == SPRITE_INDEX_ATTACK:
+            self.image_index += self.mob_dat['image_speed_atk']
+        else:
+            self.image_index += self.mob_dat['image_speed']
 
     def hit(self, damage, knockback_x, knockback_y):
         if self.dead:
