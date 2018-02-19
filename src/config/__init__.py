@@ -15,8 +15,8 @@ MOB_SPAWN_BUNNY_RATE_MULTIPLIER = 1.0 # (default = 1.0)
 PLAYER_DAMAGE_MULTIPLIER = 1.0 # (default = 1.0)
 
 # message of the day
-GAME_MOTD = 'Welcome to LocalSO! Current rates are %sx mob spawn, %sx mob count, %s player damage.' % (MOB_SPAWN_RATE_MULTIPLIER, MOB_SPAWN_COUNT_MAX_MULTIPLIER, PLAYER_DAMAGE_MULTIPLIER)
-MENU_MOTD = 'Welcome to LocalSO! Current rates are %sx mob spawn, %sx mob count, %s player damage.' % (MOB_SPAWN_RATE_MULTIPLIER, MOB_SPAWN_COUNT_MAX_MULTIPLIER, PLAYER_DAMAGE_MULTIPLIER)
+GAME_MOTD = 'Welcome to LocalSO! Current rates are %0.1fx spawn rate, %0.1fx mob count, %0.1fx damage.' % (MOB_SPAWN_RATE_MULTIPLIER, MOB_SPAWN_COUNT_MAX_MULTIPLIER, PLAYER_DAMAGE_MULTIPLIER)
+MENU_MOTD = 'Welcome to LocalSO! Current rates are %0.1fx spawn rate, %0.1fx mob count, %0.1fx damage.' % (MOB_SPAWN_RATE_MULTIPLIER, MOB_SPAWN_COUNT_MAX_MULTIPLIER, PLAYER_DAMAGE_MULTIPLIER)
 
 # Do not change these parameters, modifying them may cause bugs or performance issues
 PORT_ACCOUNT = 3104
@@ -34,6 +34,7 @@ PLAYER_MASK_HEIGHT = 54
 PLAYER_OFFSET_X = 14
 PLAYER_OFFSET_Y = 0
 PLAYER_STATUS_BROADCAST_RADIUS = 1430
+PLAYER_TIMEOUT = 1 # in seconds
 
 WORLD_GRAVITY = 1
 WORLD_TERMINAL_VELOCITY = 14

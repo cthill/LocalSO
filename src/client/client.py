@@ -1,5 +1,6 @@
 import logging
 import threading
+from datetime import datetime
 import traceback
 
 import command
@@ -39,11 +40,15 @@ class Client(Mailbox):
         self.image_index = 0x00
         self.animation_speed = 0.5
         self.facing_right = True
+        self.god_mode = False
 
         # setup other
         self.terminated = False
+        self.disconnect_handled = False
         self.section = None
         self.update_position(0, 0)
+
+        self.last_recv_timestamp = datetime.now()
 
         # write player id
         buff = []
@@ -111,14 +116,16 @@ class Client(Mailbox):
             self._terminate()
 
     def _terminate(self):
-        if not self.terminated:
-            self.terminated = True
+        if not self.disconnect_handled:
+            self.disconnect_handled = True
             self.world.client_disconnect(self)
             self.game_server.client_disconnect(self)
             self.socket.close()
             logging.info('Client %s disconnected' % self)
 
     def _handle_packet(self, size):
+        self.last_recv_timestamp = datetime.now()
+
         raw_data = self.socket.recv(size)
         data = bytearray(raw_data)
 
@@ -172,16 +179,12 @@ class Client(Mailbox):
                     self.send_tcp_message(buff)
 
         elif header == packet.MSG_PVP_HIT_PLAYER:
-            other_player_id = read_ushort(data, 2)
-            print 'Client %s try hit player %s' % (self, other_player_id)
-            if other_player_id in self.game_server.id_to_client:
-                buff = [packet.RESP_DMG_PLAYER]
-                buff.extend(data[2:])
-
-                knockback_x = read_short(data, 9) / 10.0
-                knockback_y = read_short(data, 11) / 10.0
-                print 'Client %s hit player kbx %s kby %s' % (self, knockback_x, knockback_y)
-                self.game_server.broadcast(buff, exclude=self)
+            if not self.god_mode:
+                other_player_id = read_ushort(data, 2)
+                if other_player_id in self.game_server.id_to_client:
+                    buff = [packet.RESP_DMG_PLAYER]
+                    buff.extend(data[2:])
+                    self.game_server.broadcast(buff, exclude=self)
 
         elif header == packet.MSG_CHAT:
             offset = 2
@@ -205,7 +208,6 @@ class Client(Mailbox):
             sound_id = read_ushort(data, 7) # sound_id
             knockback_x = read_short(data, 9) / 10.0
             knockback_y = read_short(data, 11) / 10.0
-            print 'sound id %s knockback_x %s, knockback_y %s' % (sound_id, knockback_x, knockback_y)
 
             # damage = 3 # for testing
             damage = damage * config.PLAYER_DAMAGE_MULTIPLIER
@@ -308,6 +310,8 @@ class Client(Mailbox):
         return BoundingBox(self.x - config.PLAYER_OFFSET_X, self.y - config.PLAYER_OFFSET_Y, config.PLAYER_MASK_WIDTH, config.PLAYER_MASK_HEIGHT)
 
     def handle_udp_packet(self, data):
+        self.last_recv_timestamp = datetime.now()
+
         header = data[0]
         if header == packet.MSG_UDP_PLAYER_POS_CHANGE or header == packet.MSG_UDP_PLAYER_SPRITE_CHANGE:
             # client_id = read_uint(data, 1)

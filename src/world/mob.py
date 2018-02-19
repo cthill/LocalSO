@@ -115,7 +115,7 @@ class Mob():
         ground_below = len(self.world.solid_block_at(bbox_below)) > 0
 
         # atk
-        self._try_attack(ground_below, x_as_int)
+        self._atk_step(ground_below, x_as_int)
 
         # jump
         self.timers['jump'] -= 1
@@ -168,17 +168,17 @@ class Mob():
             self.image_index += self.mob_dat['image_speed']
 
     def _hit_player(self, client):
-        buff = [packet.RESP_DMG_PLAYER]
-        write_ushort(buff, client.id)
-        write_ushort(buff, self.mob_dat['atk_stat'])
-        write_byte(buff, 30)
-        write_ushort(buff, config.HIT_SOUND_ID)
-        write_short(buff, self.mob_dat['knockback_x'] * self.direction * 10)
-        write_short(buff, self.mob_dat['knockback_y'] * 10)
-        #client.send_tcp_message(buff)
-        self.world.game_server.broadcast(buff)
+        if not client.god_mode:
+            buff = [packet.RESP_DMG_PLAYER]
+            write_ushort(buff, client.id)
+            write_ushort(buff, self.mob_dat['atk_stat'])
+            write_byte(buff, 30)
+            write_ushort(buff, config.HIT_SOUND_ID)
+            write_short(buff, self.mob_dat['knockback_x'] * self.direction * 10)
+            write_short(buff, self.mob_dat['knockback_y'] * 10)
+            self.world.game_server.broadcast(buff)
 
-    def _try_attack(self, ground_below, x_as_int):
+    def _atk_step(self, ground_below, x_as_int):
         if self.mob_dat['avoid_player']:
             return
 
@@ -221,19 +221,19 @@ class Mob():
                         if ca_bbox.hcenter() >= self.get_bbox().hcenter():
                             if ca_bbox.left() + (ca_bbox.right() - ca_bbox.left()) / 2 >= self.get_bbox().left() + (self.get_bbox().right() - self.get_bbox().left()) / 2 + self.mob_dat['dmg_box_x']:
                                 if ca_bbox.left() + (ca_bbox.right() - ca_bbox.left()) / 2 < self.get_bbox().left() + (self.get_bbox().right() - self.get_bbox().left()) / 2 + self.mob_dat['dmg_box_x'] + self.mob_dat['dmg_box_xscale']:
-                                    self._do_atk()
+                                    self._init_atk()
                     else:
                         if ca_bbox.hcenter() <= self.get_bbox().hcenter():
                             if ca_bbox.left() + (ca_bbox.right() - ca_bbox.left()) / 2 <= self.get_bbox().left() + (self.get_bbox().right() - self.get_bbox().left()) / 2 - self.mob_dat['dmg_box_x']:
                                 if ca_bbox.left() + (ca_bbox.right() - ca_bbox.left()) / 2 > self.get_bbox().left() + (self.get_bbox().right() - self.get_bbox().left()) / 2 - self.mob_dat['dmg_box_x'] - self.mob_dat['dmg_box_xscale']:
-                                    self._do_atk()
+                                    self._init_atk()
 
             self.set_reset_timer('atk')
             if self.sprite_index == SPRITE_INDEX_ATTACK:
                 self.timers['atk'] += ceildiv(float(self.sprite['frames']), self.mob_dat['image_speed_atk'])
 
 
-    def _do_atk(self):
+    def _init_atk(self):
         self._set_sprite(SPRITE_INDEX_ATTACK)
 
         facing_right = self.direction == 1

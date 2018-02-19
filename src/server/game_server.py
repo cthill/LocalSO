@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 import logging
 import signal
 import socket
@@ -25,6 +26,7 @@ class GameServer:
         self.clients = []
         self.id_to_client = {}
         self.client_to_id = {}
+        self.name_to_client = {}
 
         self.event_scheduler.schedule_event_recurring(self.ev_ping_all_clients, 5)
         self.counter = 0
@@ -76,6 +78,7 @@ class GameServer:
         self.clients.append(new_client)
         self.id_to_client[client_id] = new_client
         self.client_to_id[new_client] = client_id
+        self.name_to_client[client_dat['name']] = new_client
         new_client.start()
 
     def client_disconnect(self, client):
@@ -87,6 +90,7 @@ class GameServer:
 
         del self.id_to_client[client_id]
         del self.client_to_id[client]
+        del self.name_to_client[client.name]
         self.clients.remove(client)
 
     def get_num_players(self):
@@ -129,6 +133,17 @@ class GameServer:
     def ev_ping_all_clients(self):
         buff = [packet.MSG_NOP] # this packet is ignored by the client (but will reset the connection timeout)
         self.broadcast(buff)
+
+        # check client timeouts
+        now = datetime.now()
+        for client in self.clients:
+            if now - client.last_recv_timestamp > timedelta(seconds=config.PLAYER_TIMEOUT):
+                client.terminated = True
+                try:
+                    client.socket.close()
+                except:
+                    pass
+                logging.info('Client %s timed out.' % client)
 
     def get_clients(self):
         return self.clients
