@@ -118,17 +118,6 @@ class Client(Mailbox):
             self.socket.close()
             logging.info('Client %s disconnected' % self)
 
-
-    # def send_dmg(self):
-    #     buff = [packet.RESP_DMG_PLAYER]
-    #     write_ushort(buff, self.id)
-    #     write_ushort(buff, 2)
-    #     write_byte(buff, 30)
-    #     write_ushort(buff, config.HIT_SOUND_ID)
-    #     write_short(buff, 10 * 10)
-    #     write_short(buff, -10 * 10)
-    #     self.send_tcp_message(buff)
-
     def _handle_packet(self, size):
         raw_data = self.socket.recv(size)
         data = bytearray(raw_data)

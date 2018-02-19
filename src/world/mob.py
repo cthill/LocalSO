@@ -6,7 +6,7 @@ from bounding_box import BoundingBox
 from mailbox import mail_header
 from net import packet
 from net.buffer import *
-from util import ceildiv
+from util import ceildiv, dist
 
 # xspeed_knockback_decay = 1
 xspeed_knockback_div = 3
@@ -61,6 +61,12 @@ class Mob():
             self.image_index = randint(0, self.sprite['frames'] - 1)
             self.direction = 1
 
+        self.client_aggrov = None
+        self.dmg_bbox = None
+        self.players_hit = set()
+        self.atk_length_steps = 0
+        self.atk_delay_steps = 0
+
     def state_machine(self):
         if self.state_time > 0:
             self.state_time -= 1
@@ -80,6 +86,9 @@ class Mob():
         self.sprite_index = sprite_index
         self.image_index = 0.0
         self.sprite = self.mob_dat['sprites'][self.sprite_index]
+
+    def get_bbox(self):
+        return BoundingBox(int(round(self.x)) - self.x_offset, int(round(self.y)) - self.y_offset, self.w, self.h)
 
     def step(self):
         if self.dead:
@@ -106,18 +115,7 @@ class Mob():
         ground_below = len(self.world.solid_block_at(bbox_below)) > 0
 
         # atk
-        if not self.mob_dat['avoid_player']:
-            self.timers['atk'] -= 1
-            if self.timers['atk'] == 0:
-                self.set_reset_timer('atk')
-                if ground_below:
-                    search_radius = ceildiv(int(round(self.mob_dat['follow_radius'] / 2.0)), config.WORLD_SECTION_WIDTH)
-                    to_atk = self.world.find_player_nearest(x_as_int, section_radius=search_radius)
-                    if to_atk is not None and abs(to_atk.x - self.x) < self.mob_dat['follow_radius'] / 2.0:
-                        self._set_sprite(SPRITE_INDEX_ATTACK)
-                        self.timers['atk'] += ceildiv(float(self.sprite['frames']), self.mob_dat['image_speed_atk'])
-
-
+        self._try_attack(ground_below, x_as_int)
 
         # jump
         self.timers['jump'] -= 1
@@ -169,7 +167,88 @@ class Mob():
         else:
             self.image_index += self.mob_dat['image_speed']
 
+    def _hit_player(self, client):
+        buff = [packet.RESP_DMG_PLAYER]
+        write_ushort(buff, client.id)
+        write_ushort(buff, self.mob_dat['atk_stat'])
+        write_byte(buff, 30)
+        write_ushort(buff, config.HIT_SOUND_ID)
+        write_short(buff, self.mob_dat['knockback_x'] * self.direction * 10)
+        write_short(buff, self.mob_dat['knockback_y'] * 10)
+        #client.send_tcp_message(buff)
+        self.world.game_server.broadcast(buff)
 
+    def _try_attack(self, ground_below, x_as_int):
+        if self.mob_dat['avoid_player']:
+            return
+
+        self.timers['atk'] -= 1
+        if self.timers['atk'] > 0:
+            if self.dmg_bbox is not None:
+                if self.atk_delay_steps > 0:
+                    self.atk_delay_steps -= 1
+                else:
+                    if self.atk_length_steps > 0:
+                        self.atk_length_steps -= 1
+                        if len(self.players_hit) < self.mob_dat['players_hit_per_atk']:
+                            clients_to_test = []
+
+                            #TODO: only check nearby clients
+                            clients_to_test = self.world.game_server.get_clients()
+
+                            for client in clients_to_test:
+                                if client not in self.players_hit and self.dmg_bbox.check_collision(client.get_bbox()):
+                                    self._hit_player(client)
+                                    self.players_hit.add(client)
+                        else:
+                            self.dmg_bbox = None
+                    else:
+                        self.dmg_bbox = None
+
+        else:
+            if ground_below and self.xspeed_knockback == 0:
+                facing_right = self.direction == 1
+                search_radius = ceildiv(int(round(self.mob_dat['follow_radius'])), config.WORLD_SECTION_WIDTH)
+                if facing_right:
+                    x_search = self.get_bbox().right()
+                else:
+                    x_search = self.get_bbox().left()
+
+                self.client_aggrov = self.world.find_player_nearest(x_search, section_radius=search_radius)
+                if self.client_aggrov is not None and dist(self.x, self.y, self.client_aggrov.x, self.client_aggrov.y) < self.mob_dat['follow_radius'] / 2.0:
+                    ca_bbox = self.client_aggrov.get_bbox()
+                    if facing_right:
+                        if ca_bbox.hcenter() >= self.get_bbox().hcenter():
+                            if ca_bbox.left() + (ca_bbox.right() - ca_bbox.left()) / 2 >= self.get_bbox().left() + (self.get_bbox().right() - self.get_bbox().left()) / 2 + self.mob_dat['dmg_box_x']:
+                                if ca_bbox.left() + (ca_bbox.right() - ca_bbox.left()) / 2 < self.get_bbox().left() + (self.get_bbox().right() - self.get_bbox().left()) / 2 + self.mob_dat['dmg_box_x'] + self.mob_dat['dmg_box_xscale']:
+                                    self._do_atk()
+                    else:
+                        if ca_bbox.hcenter() <= self.get_bbox().hcenter():
+                            if ca_bbox.left() + (ca_bbox.right() - ca_bbox.left()) / 2 <= self.get_bbox().left() + (self.get_bbox().right() - self.get_bbox().left()) / 2 - self.mob_dat['dmg_box_x']:
+                                if ca_bbox.left() + (ca_bbox.right() - ca_bbox.left()) / 2 > self.get_bbox().left() + (self.get_bbox().right() - self.get_bbox().left()) / 2 - self.mob_dat['dmg_box_x'] - self.mob_dat['dmg_box_xscale']:
+                                    self._do_atk()
+
+            self.set_reset_timer('atk')
+            if self.sprite_index == SPRITE_INDEX_ATTACK:
+                self.timers['atk'] += ceildiv(float(self.sprite['frames']), self.mob_dat['image_speed_atk'])
+
+
+    def _do_atk(self):
+        self._set_sprite(SPRITE_INDEX_ATTACK)
+
+        facing_right = self.direction == 1
+
+        dby = int(math.floor(self.get_bbox().top())) + int(round((self.get_bbox().bottom() - self.get_bbox().top()) / 2.0)) - int(round(self.mob_dat['dmg_box_yscale'] / 2.0)) + self.mob_dat['dmg_box_y']
+        if facing_right:
+            dbx = int(round((self.get_bbox().left() + self.get_bbox().right()) / 2.0)) + self.mob_dat['dmg_box_x']
+            self.dmg_bbox = BoundingBox(dbx, dby, self.mob_dat['dmg_box_xscale'], self.mob_dat['dmg_box_yscale'])
+        else:
+            dbx = int(round((self.get_bbox().left() + self.get_bbox().right()) / 2.0)) - self.mob_dat['dmg_box_xscale'] - self.mob_dat['dmg_box_x']
+            self.dmg_bbox = BoundingBox(dbx, dby, self.mob_dat['dmg_box_xscale'], self.mob_dat['dmg_box_yscale'])
+
+        self.players_hit = set()
+        self.atk_delay_steps = ceildiv(self.mob_dat['atk_delay_frames'], self.mob_dat['image_speed_atk'])
+        self.atk_length_steps = self.mob_dat['atk_length_steps']
 
     def _move_xspeed_check_side_collide(self, xspeed):
         for i in reversed(range(1, abs(int(round(xspeed))) + 1)):

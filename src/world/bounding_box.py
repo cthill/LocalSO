@@ -36,3 +36,9 @@ class BoundingBox:
 
     def bottom(self):
         return self.y + self.h
+
+    def hcenter(self):
+        return self.x + self.w / 2
+
+    def vcenter(self):
+        return self.y + self.h / 2
