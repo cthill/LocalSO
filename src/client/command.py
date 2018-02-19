@@ -122,6 +122,6 @@ def send_public_chat(client, chat_str):
     client.game_server.broadcast(buff)
 
 def spawn(client, mob):
-    spawn_y = 0
+    spawn_y = client.get_bbox().bottom() - mob['height'] * mob['scale']
     new_mob = Mob(client.world.generate_mob_id(), mob['id'], client.x, spawn_y, None, client.world)
     client.world.send_mail_message(mail_header.MSG_ADD_MOB, new_mob)

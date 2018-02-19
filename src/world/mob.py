@@ -191,10 +191,18 @@ class Mob():
                     if self.atk_length_steps > 0:
                         self.atk_length_steps -= 1
                         if len(self.players_hit) < self.mob_dat['players_hit_per_atk']:
-                            clients_to_test = []
+                            search_radius = ceildiv(int(round(self.mob_dat['follow_radius'])), config.WORLD_SECTION_WIDTH)
+                            facing_right = self.direction == 1
+                            if facing_right:
+                                x_search = self.get_bbox().right()
+                            else:
+                                x_search = self.get_bbox().left()
+                            section = self.world.find_section_index(x_search)
+                            sections_to_search = self.world.get_local_sections(section, section_radius=search_radius)
 
-                            #TODO: only check nearby clients
-                            clients_to_test = self.world.game_server.get_clients()
+                            clients_to_test = []
+                            for section in sections_to_search:
+                                clients_to_test.extend(self.world.get_clients_in_section(section))
 
                             for client in clients_to_test:
                                 if client not in self.players_hit and self.dmg_bbox.check_collision(client.get_bbox()):
@@ -207,8 +215,8 @@ class Mob():
 
         else:
             if ground_below and self.xspeed_knockback == 0:
-                facing_right = self.direction == 1
                 search_radius = ceildiv(int(round(self.mob_dat['follow_radius'])), config.WORLD_SECTION_WIDTH)
+                facing_right = self.direction == 1
                 if facing_right:
                     x_search = self.get_bbox().right()
                 else:
