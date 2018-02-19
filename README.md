@@ -44,7 +44,11 @@ Status of game features
    - death
    - spawn points
    - rudimentary anticheat
- - attacking and killing mobs
+ - mobs
+   - mob spawning
+   - mob movement
+   - mobs attacks
+   - attacking mobs
  - chat
  - PVP
  - admin features
@@ -56,9 +60,6 @@ Status of game features
 
 
 #### Partially Working
- - mob AI
-   - mob movement is not like the original game
-   - mobs show attack animation but deal no damage
  - clans
    - the original game never fully supported clans, but will display a clan name under the player name. It also prevents clanmate pvp. I may add clan support through a text-based chat interface.
 
@@ -67,14 +68,8 @@ Status of game features
  - account saving
  - admin features
    - bans
-   - kicks
    - donor status
 
 #### Misc
 If you are an admin:
  - use alt (instead of enter) to have your text show up blue when chatting
-
-#### mob to implement:
- - atk_stat
- - knockback
- - spawn_y_offset_neg
