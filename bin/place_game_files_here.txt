@@ -1,0 +1,5 @@
+Please place the following game files in this directory:
+1. StickOnline.exe
+2. Resources.sor
+3. Readme.txt
+This is so that updates or missing files can be served to clients via HTTP.

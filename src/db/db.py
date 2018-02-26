@@ -154,3 +154,13 @@ class SQLiteDB:
                 c.execute('INSERT INTO unknown_list_2 (client_id, list_element_id) VALUES (?, ?)', (client_id, list_element_id))
 
             self.db.commit()
+
+    def ban_unban_client(self, client_id, banned):
+        c = self.db.cursor()
+        c.execute('UPDATE clients SET banned=? WHERE id=?', (1 if banned else 0, client_id))
+        self.db.commit()
+
+    def set_admin_client(self, client_id, admin):
+        c = self.db.cursor()
+        c.execute('UPDATE clients SET admin_level=? WHERE id=?', (250 if admin else 0, client_id))
+        self.db.commit()

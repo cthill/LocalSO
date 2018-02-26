@@ -63,17 +63,62 @@ def handle_admin_command(client, command):
             send_chat_response(client, 'godmode is %s.' % ('on' if client.god_mode else 'off'))
 
         elif cmd == 'kick':
-            if len(tokens) > 1:
-                name_to_kick = tokens[1]
-                client_to_kick = client.game_server.name_to_client.get(name_to_kick)
-                if client_to_kick is not None:
-                    logging.info('%s kicked %s.' % (client, client_to_kick))
-                    client_to_kick.terminated = True
-                    send_public_chat(client, '%s was kicked.' % client_to_kick.name)
+            if len(tokens) == 2:
+                target_name = tokens[1]
+                target_client_obj = client.game_server.name_to_client.get(target_name)
+                if target_client_obj is not None:
+                    logging.info('%s kicked %s.' % (client, target_client_obj))
+                    send_public_chat(client, '%s was kicked.' % target_client_obj.name)
+                    target_client_obj.terminated = True
                 else:
-                    send_chat_response(client, 'player %s not found.' % name_to_kick)
+                    send_chat_response(client, 'player %s not found.' % target_name)
             else:
                 bad_command_single(client, cmd)
+
+        elif cmd == 'ban' or cmd == 'unban':
+            if len(tokens) == 2:
+                db_ref = client.game_server.master.db
+                target_name = tokens[1]
+                target_client_db = db_ref.get_client(target_name)
+
+                if target_client_db is not None:
+                    db_ref.ban_unban_client(target_client_db['id'], cmd == 'ban')
+                    logging.info('%s %sned %s.' % (client, cmd, target_client_db['name']))
+                    send_public_chat(client, '%s was %sned.' % (target_client_db['name'], cmd))
+
+                    target_client_obj = client.game_server.name_to_client.get(target_name)
+                    if target_client_obj is not None:
+                        target_client_obj.terminated = True
+                else:
+                    send_chat_response(client, 'player %s not found.' % target_name)
+            else:
+                bad_command_single(client, cmd)
+
+        elif cmd == 'setadmin':
+            if len(tokens) == 3:
+                db_ref = client.game_server.master.db
+                target_name = tokens[1]
+                admin_val = tokens[2]
+                if admin_val == 'true' or admin_val == 'false':
+                    target_client_db = db_ref.get_client(target_name)
+                    if target_client_db is not None:
+                        db_ref.set_admin_client(target_client_db['id'], admin_val == 'true')
+
+                        logging.info('%s set %s admin %s.' % (client, target_client_db['name'], admin_val))
+                        send_chat_response(client, 'Set %s admin to %s.' % (target_name, admin_val))
+
+                        target_client_obj = client.game_server.name_to_client.get(target_name)
+                        if target_client_obj is not None:
+                            target_client_obj.kick_admin_change()
+                    else:
+                        send_chat_response(client, 'player %s not found.' % target_name)
+                else:
+                    bad_command_single(client, cmd)
+            else:
+                bad_command_single(client, cmd)
+
+        elif cmd == 'help':
+            bad_command(client, help_text=True)
 
         else:
             bad_command(client)
@@ -83,12 +128,13 @@ def handle_admin_command(client, command):
         logging.error('Error processing client %s command %s %s' % (client, command, e))
 
 
-def bad_command(client):
+def bad_command(client, help_text=False):
     lines = [
-        "Invalid command. Available commands:",
+        ("" if help_text else "Invalid command. ") + "Available commands:",
         "  spawn <mob_id> [amount], spawnall [amount]",
         "  hurtall,  killall, godmode",
-        "  kick <name>"
+        "  kick <name>, ban <name>, unban <name>",
+        "  setadmin <name> <true|false>"
     ]
 
     for line in lines:
@@ -102,6 +148,12 @@ def bad_command_single(client, cmd):
         usage = 'spawnall [count]'
     elif cmd == 'kick':
         usage = 'kick <name>'
+    elif cmd == 'ban':
+        usage = 'ban <name>'
+    elif cmd == 'unban':
+        usage = 'unban <name>'
+    elif cmd == 'setadmin':
+        usage = 'setadmin <name> <true|false>'
     else:
         bad_command(client)
         return

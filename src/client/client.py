@@ -82,7 +82,11 @@ class Client(Mailbox):
         write_byte(buff, 2)
         self.send_tcp_message(buff)
 
-        # self.world.event_scheduler.schedule_event_recurring(self.send_dmg, 10)
+        if self.admin == 250:
+            buff = [packet.RESP_CHAT]
+            write_string(buff, 'Type !help for a list of admin commands.')
+            write_byte(buff, 1)
+            self.send_tcp_message(buff)
 
     def _send_thread(self):
         try:
@@ -308,6 +312,16 @@ class Client(Mailbox):
 
     def get_bbox(self):
         return BoundingBox(self.x - config.PLAYER_OFFSET_X, self.y - config.PLAYER_OFFSET_Y, config.PLAYER_MASK_WIDTH, config.PLAYER_MASK_HEIGHT)
+
+    def kick_admin_change(self):
+        buff = [packet.RESP_CHAT]
+        write_string(buff, 'There has been a change to your admin status. You will now be disconnected.')
+        write_byte(buff, 1)
+        self.send_tcp_message(buff)
+
+        def dc_me():
+            self.terminated = True
+        self.world.event_scheduler.schedule_event(dc_me, 5)
 
     def handle_udp_packet(self, data):
         self.last_recv_timestamp = datetime.now()
