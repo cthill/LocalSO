@@ -5,6 +5,7 @@ import signal
 import sys
 
 import config
+from db.db import SQLiteDB
 from server.web_server import run as web_server_run
 from server.account_server import AccountServer
 from server.game_server import GameServer
@@ -55,6 +56,14 @@ class StickOnlineMaster:
 if __name__ == '__main__':
     logging.basicConfig(format='%(message)s', level=logging.INFO)
     logging.info('LocalSO v0.1')
+
+    # db = SQLiteDB(config.SQLITE_DB_FILE)
+    # # c = db.db.cursor()
+    # # c.execute('INSERT INTO clients VALUES (0, "test", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);')
+    # # db.db.commit()
+    # db.load_client('test', None)
+    # import sys
+    # sys.exit(0)
 
     m_stick_online_master = StickOnlineMaster()
     m_stick_online_master.start_server()
