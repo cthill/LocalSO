@@ -14,9 +14,10 @@ class StickOnlineMaster:
 
     def __init__(self):
         self.pending_game_server_connections = {}
+        self.db = SQLiteDB(config.SQLITE_DB_FILE)
 
     def start_server(self):
-        self.account_server = AccountServer(config.INTERFACE, config.PORT_ACCOUNT, self)
+        self.account_server = AccountServer(config.INTERFACE, config.PORT_ACCOUNT, self.db, self)
         t = threading.Thread(target=self.account_server)
         t.start()
 
@@ -56,14 +57,6 @@ class StickOnlineMaster:
 if __name__ == '__main__':
     logging.basicConfig(format='%(message)s', level=logging.INFO)
     logging.info('LocalSO v0.1')
-
-    # db = SQLiteDB(config.SQLITE_DB_FILE)
-    # # c = db.db.cursor()
-    # # c.execute('INSERT INTO clients VALUES (0, "test", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);')
-    # # db.db.commit()
-    # db.load_client('test', None)
-    # import sys
-    # sys.exit(0)
 
     m_stick_online_master = StickOnlineMaster()
     m_stick_online_master.start_server()
