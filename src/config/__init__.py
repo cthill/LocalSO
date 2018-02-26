@@ -16,8 +16,8 @@ PLAYER_DAMAGE_MULTIPLIER = 2.0 # (default = 1.0)
 PLAYER_START_GOLD = 500
 
 # message of the day
-GAME_MOTD = 'Welcome to LocalSO! Current rates are %0.1fx spawn rate, %0.1fx mob count, %0.1fx damage.' % (MOB_SPAWN_RATE_MULTIPLIER, MOB_SPAWN_COUNT_MAX_MULTIPLIER, PLAYER_DAMAGE_MULTIPLIER)
-MENU_MOTD = 'Welcome to LocalSO! Current rates are %0.1fx spawn rate, %0.1fx mob count, %0.1fx damage.' % (MOB_SPAWN_RATE_MULTIPLIER, MOB_SPAWN_COUNT_MAX_MULTIPLIER, PLAYER_DAMAGE_MULTIPLIER)
+GAME_MOTD = 'Welcome to LocalSO (BETA)! Current rates are %0.1fx spawn rate, %0.1fx mob count, %0.1fx damage.' % (MOB_SPAWN_RATE_MULTIPLIER, MOB_SPAWN_COUNT_MAX_MULTIPLIER, PLAYER_DAMAGE_MULTIPLIER)
+MENU_MOTD = 'Welcome to LocalSO (BETA)! Current rates are %0.1fx spawn rate, %0.1fx mob count, %0.1fx damage.' % (MOB_SPAWN_RATE_MULTIPLIER, MOB_SPAWN_COUNT_MAX_MULTIPLIER, PLAYER_DAMAGE_MULTIPLIER)
 
 # registration parameters
 REGISTER_ILLEGAL_CHARACTERS = ' #/\\:*?<>|"'
