@@ -1,5 +1,6 @@
 from datetime import datetime
 import logging
+import md5
 import os.path
 import sqlite3
 from threading import Lock
@@ -17,16 +18,47 @@ class SQLiteDB:
         logging.info('Connected to database %s' % (self.db_file))
         self.db.row_factory = sqlite3.Row
 
-        if should_init_db:
-            self._init_db()
+        try:
+            if should_init_db:
+                self._init_db()
+        except Exception as e:
+            logging.error('Error initializing the datbase. Please delete %s and try again.', config.SQLITE_DB_FILE)
+            raise e
 
     def _init_db(self):
-        logging.info('creating database tables...')
+        logging.info('Performing first time setup.')
+        logging.info('Creating database tables...')
         init_statements = open(config.SQLITE_DB_SQL_INIT_FILE).read()
         c = self.db.cursor()
         c.executescript(init_statements)
         self.db.commit()
-        logging.info('done.')
+        logging.info('Done.')
+
+        logging.info('You must register an admin account.')
+        admin_username = raw_input("  username: ")
+        admin_password = raw_input("  password: ")
+
+        m = md5.new()
+        m.update(admin_password)
+        admin_passhash = m.hexdigest()
+
+        c = self.db.cursor()
+        now = datetime.now().isoformat()
+        c.execute('''
+        INSERT INTO clients
+        (
+            name, passhash, register_date, last_login_date, last_save_date,
+            last_login_ip, banned, spawn_x, spawn_y, hp, mp, stat_str, stat_agi,
+            stat_int, stat_vit, int_unknown_1, level, experience, admin_level,
+            stat_points, int_unknown_2, weapon_equipped, hat_equipped, int_unknown_3,
+            int_unknown_4, int_unknown_5, gold, clan
+        )
+        VALUES
+        (?, ?, ?, ?, null, null, 0, 1080, 300, 739, 1200, 128, 128, 128, 128, 128, 255, 0.0, 250, 0, 0, 0, 0, 0, 0, 0, 9999999, '')
+        ''', (admin_username, admin_passhash, now, now))
+        self.db.commit()
+        logging.info('Created admin account %s', admin_username)
+        logging.info('To grant admin access to other users, use the in game commands.')
 
     def get_client(self, name):
         with self.db_lock:

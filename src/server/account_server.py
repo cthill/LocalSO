@@ -12,19 +12,16 @@ from net.socket import tcp_write
 from util import buff_to_str
 
 class AccountServer:
-    def __init__(self, interface, port, master):
+    def __init__(self, interface, port, db, master):
         self.interface = interface
         self.port = port
+        self.db = db
         self.master = master
 
         self.terminated = False
         self.counter = 0
-        self.db = None
 
     def __call__(self):
-        # connect to db
-        self.db = SQLiteDB(config.SQLITE_DB_FILE)
-
         # listen tcp
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.bind((self.interface, self.port))
