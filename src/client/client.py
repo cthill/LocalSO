@@ -127,6 +127,10 @@ class Client(Mailbox):
             self.socket.close()
             logging.info('Client %s disconnected' % self)
 
+    def disconnect(self):
+        tcp_write(self.socket, [])
+        self.terminated = True
+
     def _handle_packet(self, size):
         self.last_recv_timestamp = datetime.now()
 

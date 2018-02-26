@@ -1,12 +1,11 @@
-import socket
 import threading
 import logging
-import signal
-import sys
+import os.path
+import time
 
 import config
 from db.db import SQLiteDB
-from server.web_server import run as web_server_run
+from server.web_server import StickOnlineHTTPServer
 from server.account_server import AccountServer
 from server.game_server import GameServer
 
@@ -16,7 +15,11 @@ class StickOnlineMaster:
         self.pending_game_server_connections = {}
         self.db = SQLiteDB(config.SQLITE_DB_FILE)
 
-    def start_server(self):
+    def start(self):
+        self.webserver = StickOnlineHTTPServer(config.INTERFACE_HTTP, config.PORT_HTTP)
+        t = threading.Thread(target=self.webserver)
+        t.start()
+
         self.account_server = AccountServer(config.INTERFACE, config.PORT_ACCOUNT, self.db, self)
         t = threading.Thread(target=self.account_server)
         t.start()
@@ -44,10 +47,12 @@ class StickOnlineMaster:
         return self.account_server
 
     def stop(self):
+        self.webserver.stop()
+
         # dc all the clients from the game server
         for client in self.game_server.clients:
             try:
-                client.socket.close()
+                client.disconnect()
             except Exception as e:
                 logging.info('Failed to disconnect client %s: %s' % (client, e))
 
@@ -58,8 +63,20 @@ if __name__ == '__main__':
     logging.basicConfig(format='%(message)s', level=logging.INFO)
     logging.info('LocalSO v0.1')
 
-    m_stick_online_master = StickOnlineMaster()
-    m_stick_online_master.start_server()
+    files = ['Resources.sor', 'StickOnline.exe', 'Readme.txt']
+    for filename in files:
+        if not os.path.isfile(config.GAME_BIN_DIR + '/' + filename):
+            logging.warn('Missing game file %s. Please place %s in %s' % ( config.GAME_BIN_DIR + '/' + filename, filename, config.GAME_BIN_DIR))
 
-    t = threading.Thread(target=web_server_run, args=(config.INTERFACE_HTTP, config.PORT_HTTP))
-    t.start()
+    # start the servers
+    m_stick_online_master = StickOnlineMaster()
+    m_stick_online_master.start()
+
+    try:
+        while True:
+            pass
+    except KeyboardInterrupt:
+        logging.info('Shutting down...')
+        m_stick_online_master.stop()
+        time.sleep(5)
+        os._exit(0)
