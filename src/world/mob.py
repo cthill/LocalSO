@@ -134,9 +134,9 @@ class Mob():
             if self.sprite_index != SPRITE_INDEX_ATTACK:
                 self.set_reset_timer('walk')
                 search_radius = ceildiv(int(round(self.mob_dat['follow_radius'])), config.WORLD_SECTION_WIDTH)
-                # the original game didn't multiply the search radius by 2, but I find it makes the mobs feel much more lively
-                client_aggrov = self.world.find_player_nearest(self.get_bbox().hcenter(), section_radius=search_radius * 2)
-                if client_aggrov is not None and dist(self.x, self.y, client_aggrov.x, client_aggrov.y) <= self.mob_dat['follow_radius'] * 2:
+                # the original game didn't multiply the search radius by 1.5, but I find it makes the mobs feel much more lively
+                client_aggrov = self.world.find_player_nearest(self.get_bbox().hcenter(), section_radius=int(round(search_radius * 1.5)))
+                if client_aggrov is not None and dist(self.x, self.y, client_aggrov.x, client_aggrov.y) <= self.mob_dat['follow_radius'] * int(round(search_radius * 1.5)):
                     if client_aggrov.get_bbox().hcenter() <= self.get_bbox().hcenter():
                         self._set_sprite(SPRITE_INDEX_WALK)
                         self.direction = -1

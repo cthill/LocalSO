@@ -28,6 +28,9 @@ REGISTER_CLOSED = False # set to true to disallow registration
 SQLITE_DB_FILE = '../data/stickonline.db'
 SQLITE_DB_SQL_INIT_FILE = '../data/init.sql'
 
+# game binary files directory
+GAME_BIN_DIR = '../bin'
+
 # Do not change these parameters, modifying them may cause bugs or performance issues
 COMPATIBLE_GAME_VERSION = 439.0
 PORT_ACCOUNT = 3104
