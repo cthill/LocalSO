@@ -368,7 +368,9 @@ class Mob():
 
         if old_section != new_section:
             self.section = new_section
-            self.world.send_mail_message(mail_header.UPDATE_MOB_SECTION, (self, old_section, new_section))
+            # self.world.send_mail_message(mail_header.UPDATE_MOB_SECTION, (self, old_section, new_section))
+            # we can just call _update_mob_section directly since mobs are run on the world thread
+            self.world._update_mob_section(self, old_section, new_section)
 
     def get_status_packet(self):
         self.xspeed_last_write = self.xspeed

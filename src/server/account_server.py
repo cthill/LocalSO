@@ -116,11 +116,6 @@ class AccountServer:
             self._deny_request(conn, "Your username can not be more than 12 characters.")
             return
 
-        # The client enables special spawn features for players with specific usernames. So we ban those usernames.
-        if username in config.REGISTER_ILLEGAL_USERNAMES:
-            self._deny_request(conn, "That username is not allowed.")
-            return
-
         for c in config.REGISTER_ILLEGAL_CHARACTERS:
             if c in  username:
                 self._deny_request(conn, "Your username contains illegal characters.")
