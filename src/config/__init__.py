@@ -21,15 +21,14 @@ MENU_MOTD = 'Welcome to LocalSO (BETA)! Current rates are %0.1fx spawn rate, %0.
 
 # registration parameters
 REGISTER_ILLEGAL_CHARACTERS = ' #/\\:*?<>|"'
-REGISTER_ILLEGAL_USERNAMES = ['meiun', 'danimal', 'seifer']
 REGISTER_CLOSED = False # set to true to disallow registration
 
 # db file
-SQLITE_DB_FILE = '../data/stickonline.db'
-SQLITE_DB_SQL_INIT_FILE = '../data/init.sql'
+SQLITE_DB_FILE = 'data/stickonline.db'
+SQLITE_DB_SQL_INIT_FILE = 'data/init.sql'
 
 # game binary files directory
-GAME_BIN_DIR = '../bin'
+GAME_BIN_DIR = 'bin'
 
 # Do not change these parameters, modifying them may cause bugs or performance issues
 COMPATIBLE_GAME_VERSION = 439.0
@@ -56,7 +55,7 @@ SOLID_BLOCK_DATA = []
 MOB_DATA = []
 MOB_SPAWN = []
 
-DATA_DIR = '../data/'
+DATA_DIR = 'data/'
 # load world data json
 block_data_json = open(DATA_DIR + 'world.json').read()
 block_data = json.loads(block_data_json)

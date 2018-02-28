@@ -311,9 +311,6 @@ class Client(Mailbox):
             self.section = new_section
             self.world.send_mail_message(mail_header.UPDATE_CLIENT_SECTION, (self, old_section, new_section))
 
-            logging.info('Client %s new section %s' % (self, new_section))
-            logging.info('Active sections: %s' % (self.world.get_active_sections()))
-
     def get_bbox(self):
         return BoundingBox(int(round(self.x)) - config.PLAYER_OFFSET_X, int(round(self.y)) - config.PLAYER_OFFSET_Y, config.PLAYER_MASK_WIDTH, config.PLAYER_MASK_HEIGHT)
 

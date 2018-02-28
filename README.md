@@ -15,20 +15,22 @@ I am in no way affiliated with Stick Online or Team Stick Online.
  - Python 2.7
 
 #### Starting The Server
-Run `main.py` from the command line:
+If on Windows, run `start_server.cmd` from explorer or the command line.
+
+Otherwise, run `src/main.py` from the command line:
 ```
-$ python main.py
+$ python src/main.py
 ```
 
 #### Connecting To The Server
 Before connecting, obtain a copy of the Stick Online client version 0.0227.
 
-To connect to the game server with an unmodified client, you must add two entries to your hosts file. Add the following to `C:\Windows\System32\drivers\etc\hosts`
+To connect with an unmodified client, you must add two entries to your hosts file. Add the following two entries to `C:\Windows\System32\drivers\etc\hosts`
 ```
 127.0.0.1	stickonline.redirectme.net
 127.0.0.1	www.stick-online.com
 ```
-Start the client and it should connect to the server emulator.
+Start the client and it should connect to the server.
 
 Note: you will not be able to connect to the official www.stick-online.com website without first undoing these changes.
 
@@ -36,6 +38,8 @@ Note: you will not be able to connect to the official www.stick-online.com websi
 ## Features
 Status of game features
 #### Working
+ - login and registration
+ - account saving
  - everything that is handled client-side:
    - shops
    - gold and item drops
@@ -52,11 +56,12 @@ Status of game features
  - chat
  - PVP
  - admin features
-   - custom admin commands (prefixed by !)
-   - blue colored admin chat
-   - mob spawning with scroll wheel and F12
-     - the client checks your player name against a list of admin names before trying to spawn a mob. This list is hard coded.
-     - because of this, I have implemented text-based admin commands.
+   - admin chat announcements (use alt instead of enter to send a chat announcement)
+   - custom admin commands
+     - spawning and killing mobs
+     - kicks
+     - bans
+     - grant admin access
 
 
 #### Partially Working
@@ -64,12 +69,4 @@ Status of game features
    - the original game never fully supported clans, but will display a clan name under the player name. It also prevents clanmate pvp. I may add clan support through a text-based chat interface.
 
 #### Unimplemented
- - login and registration (the login screen accepts any username and password)
- - account saving
- - admin features
-   - bans
-   - donor status
-
-#### Misc
-If you are an admin:
- - use alt (instead of enter) to have your text show up blue when chatting
+ - -
