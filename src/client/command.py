@@ -40,6 +40,16 @@ def handle_admin_command(client, command):
                 for i in range(count):
                     spawn(client, mob)
 
+        elif cmd == 'hurt':
+            local_sections = client.world.get_local_sections(client.section)
+            count = 0
+            for section in local_sections:
+                for mob in client.world.section_to_mobs[section]:
+                    mob.hp = 1
+                    count += 1
+
+            send_chat_response(client, 'hurt %s mobs.' % count)
+
         elif cmd == 'hurtall':
             count = 0
             for mob_id in client.world.mobs.keys():
@@ -48,6 +58,17 @@ def handle_admin_command(client, command):
                 count += 1
 
             send_chat_response(client, 'hurt %s mobs.' % count)
+
+        elif cmd == 'kill':
+            local_sections = client.world.get_local_sections(client.section)
+            count = 0
+            for section in local_sections:
+                for mob in client.world.section_to_mobs[section]:
+                    mob.hit(mob.hp + mob.defense, 0, 0)
+                    count += 1
+
+            send_chat_response(client, 'killed %s mobs.' % count)
+
 
         elif cmd == 'killall':
             count = 0
@@ -132,7 +153,7 @@ def bad_command(client, help_text=False):
     lines = [
         ("" if help_text else "Invalid command. ") + "Available commands:",
         "  spawn <mob_id> [amount], spawnall [amount]",
-        "  hurtall,  killall, godmode",
+        "  hurt, hurtall, kill, killall, godmode",
         "  kick <name>, ban <name>, unban <name>",
         "  setadmin <name> <true|false>"
     ]
