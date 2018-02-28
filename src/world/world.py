@@ -11,8 +11,6 @@ from spawner import MobSpawner
 from net.buffer import *
 from util import ceildiv
 
-
-
 class WorldSection:
     def __init__(self, index):
         self.index = index
@@ -36,6 +34,7 @@ class World(Mailbox):
         self.section_to_mobs = {}
         self.active_sections = set()
         self.mob_id_gen_counter = 0
+        self.world_step_num = 0
 
         # create sections. This makes collision detection faster because we only have to check for collision within the section (and adjacent sections)
         for i in range(ceildiv(config.WORLD_WIDTH, config.WORLD_SECTION_WIDTH)):
@@ -114,12 +113,12 @@ class World(Mailbox):
     def __call__(self):
         target_frame_interval = 1.0/config.ROOM_SPEED
         while True:
-            step_start_timestamp = time.clock()
+            step_start_timestamp = time.time()
 
             self._step()
 
             # compute time to next frame
-            now = time.clock()
+            now = time.time()
             time_to_wait = target_frame_interval - (now - step_start_timestamp)
             if time_to_wait < 0:
                 time_to_wait = 0
@@ -150,13 +149,19 @@ class World(Mailbox):
                 self._update_client_section(*payload)
 
     def _step(self):
+
         self._process_mail_messages()
 
         # run the spawners
         for spawner in self.mob_spawn:
             spawner.step()
 
-        # simulate mobs
+        # find all sections in which mobs should be stepped
+        active_sections_expanded = set()
+        for section_index in self.active_sections:
+            active_sections_expanded.update(self.get_local_sections(section_index))
+
+        # step the mobs
         to_remove = set()
         for mob_id in self.mobs:
             mob = self.mobs[mob_id]
@@ -166,7 +171,8 @@ class World(Mailbox):
                     buff = [packet.RESP_MOB_DEATH]
                     write_uint(buff, mob.id)
                     self.game_server.broadcast_local(buff, mob.section)
-            else:
+            elif mob.section in active_sections_expanded:
+                # mob.step() is an expensive call, so we only want to do it in the active world sections (where the players are)
                 mob.step()
 
         # remove dead mobs
@@ -178,14 +184,29 @@ class World(Mailbox):
         for client in self.game_server.clients:
             # then get the client's nearby sections
             local_sections = self.get_local_sections(client.section)
+            # if self.world_step_num % 1 == 0:
             for section in local_sections:
                 # find all the mobs in the nearby section
                 for mob in self.section_to_mobs.get(section, []):
                     # send that client the mob status
-                    client.send_tcp_message(mob.get_status_packet())
+                    if mob.write_packet_this_step:
+                        client.send_tcp_message(mob.get_status_packet())
 
+            # interpolate the client's state
+            client.interpolate_state()
+
+        self.world_step_num += 1
 
     def solid_block_at(self, bbox):
+        section_range = self._find_section_range(bbox)
+        for i in range(*section_range):
+            for solid_block in self.sections[i].solid_blocks:
+                if solid_block.check_collision(bbox):
+                    return True
+
+        return False
+
+    def get_solid_blocks_at(self, bbox):
         touching = []
         section_range = self._find_section_range(bbox)
         for i in range(*section_range):
@@ -198,17 +219,13 @@ class World(Mailbox):
     def find_player_nearest(self, x, section_radius=3):
         section = self.find_section_index(x)
         sections_to_search = self.get_local_sections(section, section_radius=section_radius)
-        # print 'searching sections %s' % sections_to_search
         players_found = []
         for section in sections_to_search:
             players_found.extend(self.section_to_clients[section])
 
-        # print 'found players %s' % players_found
-
         nearest = None
         nearest_dist = config.WORLD_WIDTH
         for player in players_found:
-            # print 'plauyer %s dist %s' % (player, abs(player.x-x))
             if abs(player.x - x) < nearest_dist:
                 nearest = player
                 nearest_dist = abs(player.x - x)

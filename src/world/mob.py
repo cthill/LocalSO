@@ -45,6 +45,8 @@ class Mob():
         self.yspeed = 0
         self.xspeed_knockback = 0
 
+
+
         self.hp = self.mob_dat['hp']
         self.defense = self.mob_dat['defense']
         self.dead = False
@@ -54,13 +56,29 @@ class Mob():
         self.set_reset_timer('atk')
         self.set_reset_timer('jump')
 
+        self.write_packet_this_step = False
+        self.xspeed_last_write = self.xspeed
+        self.yspeed_last_write = self.yspeed
+        self.direction_last_write = self.direction
+        self.sprite_index_last_write = self.sprite_index
+        self.mob_dat['timer_write_packet_base'] = 15
+        self.mob_dat['timer_write_packet_rand'] = 0
+        self.set_reset_timer('write_packet')
+
         self.broadcast_death = True
 
         if self.mob_type == 4 or self.mob_type == 6 or self.mob_type == 15:
             self.image_index = randint(0, self.sprite['frames'] - 1)
             self.direction = 1
 
+        # the original game didn't multiply the search radius by 1.5, but I find it makes the mobs feel much more lively
+        self.client_aggrov = None
+        self.follow_radius = int(round(self.mob_dat['follow_radius']))
+        self.follow_radius_2x = int(round(self.mob_dat['follow_radius'] * 2.0))
+        self.walk_section_search_radius = ceildiv(self.follow_radius_2x, config.WORLD_SECTION_WIDTH)
+
         self.dmg_bbox = None
+        self.atk_search_radius = ceildiv(self.follow_radius, config.WORLD_SECTION_WIDTH)
         self.players_hit = set()
         self.atk_length_steps = 0
         self.atk_delay_steps = 0
@@ -86,46 +104,57 @@ class Mob():
         else:
             self._step_active()
 
+        self.timers['write_packet'] -= 1
+        if self.timers['write_packet'] == 0:
+            self.set_reset_timer('write_packet')
+            self.write_packet_this_step = True
+
     def _step_passive(self):
         self._move_yspeed_check_ground_collide()
         self.update_world_position(self.x, self.y)
 
     def _step_active(self):
+        # gravity
+        self.yspeed += config.WORLD_GRAVITY
+        if self.yspeed > config.WORLD_TERMINAL_VELOCITY:
+            self.yspeed = config.WORLD_TERMINAL_VELOCITY
+
+        # xspeed
+        if self.xspeed_knockback != 0:
+            self.xspeed = self.xspeed_knockback
+        else:
+            if self.sprite_index == SPRITE_INDEX_WALK:
+                if self.direction > 0:
+                    self.xspeed = self.base_speed
+                else:
+                    self.xspeed = -self.base_speed
+            elif self.sprite_index == SPRITE_INDEX_STAND or self.sprite_index == SPRITE_INDEX_ATTACK:
+                self.xspeed = 0
+
         x_plus_speed_as_int = int(round(self.x + self.xspeed))
         x_as_int = int(round(self.x))
         y_as_int = int(round(self.y))
 
         bbox_side = BoundingBox(x_plus_speed_as_int - self.x_offset, y_as_int - self.y_offset, self.w, self.h)
-        side_collide = len(self.world.solid_block_at(bbox_side)) > 0
+        side_collide = self.world.solid_block_at(bbox_side)
 
         bbox_below = BoundingBox(x_as_int - self.x_offset, y_as_int - self.y_offset + 1, self.w, self.h)
-        ground_below = len(self.world.solid_block_at(bbox_below)) > 0
+        ground_below = self.world.solid_block_at(bbox_below)
 
         # walk, jump, atk
         self._walk_step()
         self._atk_step(ground_below)
         self._jump_step(side_collide, ground_below)
-
-        # xspeed
-        if self.sprite_index == SPRITE_INDEX_WALK:
-            if self.direction > 0:
-                self.xspeed = self.base_speed
-            else:
-                self.xspeed = -self.base_speed
-        elif self.sprite_index == SPRITE_INDEX_STAND or self.sprite_index == SPRITE_INDEX_ATTACK:
-            self.xspeed = 0
-
-        # move in x and y
-        if self.xspeed_knockback != 0:
-            self._move_xspeed_check_side_collide(self.xspeed_knockback)
-        else:
-            self._move_xspeed_check_side_collide(self.xspeed)
-
+        self._move_xspeed_check_side_collide(side_collide)
         self._move_yspeed_check_ground_collide()
-
         self.update_world_position(self.x, self.y)
-
         self._do_animation()
+
+        self.write_packet_this_step |= (
+            self.direction != self.direction_last_write or
+            self.xspeed != self.xspeed_last_write or
+            self.sprite_index != self.sprite_index_last_write
+        )
 
     def _walk_step(self):
         if self.timers['walk'] > 0:
@@ -133,11 +162,10 @@ class Mob():
         else:
             if self.sprite_index != SPRITE_INDEX_ATTACK:
                 self.set_reset_timer('walk')
-                search_radius = ceildiv(int(round(self.mob_dat['follow_radius'])), config.WORLD_SECTION_WIDTH)
-                # the original game didn't multiply the search radius by 1.5, but I find it makes the mobs feel much more lively
-                client_aggrov = self.world.find_player_nearest(self.get_bbox().hcenter(), section_radius=int(round(search_radius * 1.5)))
-                if client_aggrov is not None and dist(self.x, self.y, client_aggrov.x, client_aggrov.y) <= self.mob_dat['follow_radius'] * int(round(search_radius * 1.5)):
-                    if client_aggrov.get_bbox().hcenter() <= self.get_bbox().hcenter():
+                client_aggrov = self.world.find_player_nearest(self.get_bbox().hcenter(), section_radius=self.walk_section_search_radius)
+                if client_aggrov is not None and dist(self.x, self.y, client_aggrov.x, client_aggrov.y) <= self.follow_radius_2x:
+                    self.client_aggrov = client_aggrov
+                    if self.client_aggrov.get_bbox().hcenter() <= self.get_bbox().hcenter():
                         self._set_sprite(SPRITE_INDEX_WALK)
                         self.direction = -1
                     else:
@@ -148,8 +176,7 @@ class Mob():
                 else:
                     self._set_sprite(SPRITE_INDEX_STAND)
                     # the original game didn't do this, but I find it makes the mobs feel much more lively
-                    self.timers['walk'] /= 4
-
+                    # self.timers['walk'] /= 4
             else:
                 self.timers['walk'] = 1
 
@@ -159,6 +186,7 @@ class Mob():
             self.set_reset_timer('jump')
 
             if side_collide and ground_below and self.sprite_index != SPRITE_INDEX_ATTACK:
+                self.write_packet_this_step = True
                 self.yspeed = -self.mob_dat['jump_speed']
                 if self.direction > 0:
                     self.xspeed = self.base_speed
@@ -175,26 +203,22 @@ class Mob():
                 self._do_atk()
         else:
             if ground_below and self.xspeed_knockback == 0:
-                search_radius = ceildiv(int(round(self.mob_dat['follow_radius'])), config.WORLD_SECTION_WIDTH)
                 facing_right = self.direction == 1
-                if facing_right:
-                    x_search = self.get_bbox().right()
-                else:
-                    x_search = self.get_bbox().left()
+                x_search = self.get_bbox().right() if facing_right else self.get_bbox().left()
 
-                client_aggrov = self.world.find_player_nearest(x_search, section_radius=search_radius)
-                if client_aggrov is not None and dist(self.x, self.y, client_aggrov.x, client_aggrov.y) < self.mob_dat['follow_radius'] / 2.0:
-                    ca_bbox = client_aggrov.get_bbox()
+                client_nearest = self.world.find_player_nearest(x_search, section_radius=self.atk_search_radius)
+                if client_nearest is not None and dist(self.x, self.y, client_nearest.x, client_nearest.y) < self.follow_radius / 2.0:
+                    ca_bbox = client_nearest.get_bbox()
                     if facing_right:
-                        if ca_bbox.hcenter() >= self.get_bbox().hcenter():
-                            if ca_bbox.left() + (ca_bbox.right() - ca_bbox.left()) / 2 >= self.get_bbox().left() + (self.get_bbox().right() - self.get_bbox().left()) / 2 + self.mob_dat['dmg_box_x']:
-                                if ca_bbox.left() + (ca_bbox.right() - ca_bbox.left()) / 2 < self.get_bbox().left() + (self.get_bbox().right() - self.get_bbox().left()) / 2 + self.mob_dat['dmg_box_x'] + self.mob_dat['dmg_box_xscale']:
-                                    self._init_atk()
+                        # if ca_bbox.hcenter() >= self.get_bbox().hcenter():
+                        if ca_bbox.hcenter() >= self.get_bbox().hcenter() + self.mob_dat['dmg_box_x']:
+                            if ca_bbox.hcenter() < self.get_bbox().hcenter() + self.mob_dat['dmg_box_x'] + self.mob_dat['dmg_box_xscale']:
+                                self._init_atk()
                     else:
-                        if ca_bbox.hcenter() <= self.get_bbox().hcenter():
-                            if ca_bbox.left() + (ca_bbox.right() - ca_bbox.left()) / 2 <= self.get_bbox().left() + (self.get_bbox().right() - self.get_bbox().left()) / 2 - self.mob_dat['dmg_box_x']:
-                                if ca_bbox.left() + (ca_bbox.right() - ca_bbox.left()) / 2 > self.get_bbox().left() + (self.get_bbox().right() - self.get_bbox().left()) / 2 - self.mob_dat['dmg_box_x'] - self.mob_dat['dmg_box_xscale']:
-                                    self._init_atk()
+                        # if ca_bbox.hcenter() <= self.get_bbox().hcenter():
+                        if ca_bbox.hcenter() <= self.get_bbox().hcenter() - self.mob_dat['dmg_box_x']:
+                            if ca_bbox.hcenter() > self.get_bbox().hcenter() - self.mob_dat['dmg_box_x'] - self.mob_dat['dmg_box_xscale']:
+                                self._init_atk()
 
             self.set_reset_timer('atk')
             if self.sprite_index == SPRITE_INDEX_ATTACK:
@@ -257,36 +281,17 @@ class Mob():
             write_short(buff, self.mob_dat['knockback_y'] * 10)
             self.world.game_server.broadcast(buff)
 
-    def _move_xspeed_check_side_collide(self, xspeed):
-        for i in reversed(range(1, abs(int(round(xspeed))) + 1)):
-            if xspeed > 0:
-                x_plus_speed_as_int = int(round(self.x + i))
-                y_as_int = int(round(self.y))
-
-                bbox_side = BoundingBox(x_plus_speed_as_int - self.x_offset, y_as_int - self.y_offset, self.w, self.h)
-                side_collide = len(self.world.solid_block_at(bbox_side)) > 0
-
-                if not side_collide and x_plus_speed_as_int < config.WORLD_WIDTH:
-                    self.x = self.x + i
-                    break
-
-            else:
-                x_plus_speed_as_int = int(round(self.x - i))
-                y_as_int = int(round(self.y))
-
-                bbox_side = BoundingBox(x_plus_speed_as_int - self.x_offset, y_as_int - self.y_offset, self.w, self.h)
-                side_collide = len(self.world.solid_block_at(bbox_side)) > 0
-
-                if not side_collide and x_plus_speed_as_int > 0:
-                    self.x = self.x - i
-                    break
+    def _move_xspeed_check_side_collide(self, side_collide):
+        if not side_collide:
+            self.x += self.xspeed
+            if self.x < 0:
+                self.x = 0
+            elif self.x > config.WORLD_WIDTH:
+                self.x = config.WORLD_WIDTH
+        else:
+            self.xspeed = 0
 
     def _move_yspeed_check_ground_collide(self):
-        # gravity
-        self.yspeed += config.WORLD_GRAVITY
-        if self.yspeed > config.WORLD_TERMINAL_VELOCITY:
-            self.yspeed = config.WORLD_TERMINAL_VELOCITY
-
         # move y
         self.y += self.yspeed
         if self.y - self.y_offset > config.WORLD_HEIGHT + 300:
@@ -298,7 +303,7 @@ class Mob():
         x_as_int = int(round(self.x))
         y_as_int = int(round(self.y))
         bbox = BoundingBox(x_as_int - self.x_offset, y_as_int - self.y_offset, self.w, self.h)
-        touching = self.world.solid_block_at(bbox)
+        touching = self.world.get_solid_blocks_at(bbox)
 
         if len(touching) > 0:
             min_touching_y = config.WORLD_HEIGHT
@@ -310,10 +315,6 @@ class Mob():
             self.y = min_touching_y - self.h + self.y_offset
             self.xspeed_knockback = 0
             self.yspeed = 0
-        else:
-            pass
-            # print 'setsrpint jump'
-            # self._set_sprite(SPRITE_INDEX_JUMP)
 
     def _do_animation(self):
         if self.sprite_index == SPRITE_INDEX_ATTACK and self.image_index >= self.sprite['frames']:
@@ -370,8 +371,13 @@ class Mob():
             self.world.send_mail_message(mail_header.UPDATE_MOB_SECTION, (self, old_section, new_section))
 
     def get_status_packet(self):
+        self.xspeed_last_write = self.xspeed
+        self.yspeed_last_write = self.yspeed
+        self.direction_last_write = self.direction
+        self.sprite_index_last_write = self.sprite_index
+        self.write_packet_this_step = False
+
         # send mob info
-        # print 'writing mob info %s %s %s' % (self.id, self.x, self.y)
         buff = [packet.RESP_MOB_STATUS]
         write_ushort(buff, self.id) # mob unique id
         write_uint(buff, int(round(self.x * 10))) # x
