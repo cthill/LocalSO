@@ -74,7 +74,7 @@ if __name__ == '__main__':
 
     try:
         while True:
-            pass
+            time.sleep(1)
     except KeyboardInterrupt:
         logging.info('Shutting down...')
         m_stick_online_master.stop()

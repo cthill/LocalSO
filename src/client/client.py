@@ -315,7 +315,29 @@ class Client(Mailbox):
             logging.info('Active sections: %s' % (self.world.get_active_sections()))
 
     def get_bbox(self):
-        return BoundingBox(self.x - config.PLAYER_OFFSET_X, self.y - config.PLAYER_OFFSET_Y, config.PLAYER_MASK_WIDTH, config.PLAYER_MASK_HEIGHT)
+        return BoundingBox(int(round(self.x)) - config.PLAYER_OFFSET_X, int(round(self.y)) - config.PLAYER_OFFSET_Y, config.PLAYER_MASK_WIDTH, config.PLAYER_MASK_HEIGHT)
+
+    def interpolate_state(self):
+        # gravity
+        self.y_speed += config.WORLD_GRAVITY
+        if self.y_speed > config.WORLD_TERMINAL_VELOCITY:
+            self.y_speed = config.WORLD_TERMINAL_VELOCITY
+
+        self.x += self.x_speed
+        self.y += self.y_speed
+
+        bbox = self.get_bbox()
+        touching = self.world.get_solid_blocks_at(bbox)
+
+        if len(touching) > 0:
+            min_touching_y = config.WORLD_HEIGHT
+
+            for solid_block in touching:
+                if solid_block.y < min_touching_y:
+                    min_touching_y = solid_block.y
+
+            self.y = min_touching_y - config.PLAYER_MASK_HEIGHT - config.PLAYER_OFFSET_Y
+            self.y_speed = 0
 
     def kick_admin_change(self):
         buff = [packet.RESP_CHAT]

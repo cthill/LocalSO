@@ -36,7 +36,7 @@ class GameServer:
         t = threading.Thread(target=self.udp_server, args=(self.interface, self.port))
         t.start()
 
-        # create wolrd thread
+        # create wolrd process
         t = threading.Thread(target=self.world)
         t.start()
 
