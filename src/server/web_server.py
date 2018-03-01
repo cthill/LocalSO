@@ -1,9 +1,13 @@
 import base64
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
+import json
 import logging
 import SocketServer
 
 import config
+
+# this is jank but whatever
+master_obj = None
 
 class WebServer(BaseHTTPRequestHandler):
     def _set_headers(self, status_code, content_type='text/html', content_length=0):
@@ -15,7 +19,23 @@ class WebServer(BaseHTTPRequestHandler):
 
     def do_GET(self):
         try:
-            if self.path == '/download/v2/Announcements.txt':
+            if self.path == '/status':
+                self._set_headers(200, content_type='application/json')
+
+                mgs = master_obj.get_game_server()
+                mas = master_obj.get_account_server()
+                status = 'online'
+                players = len(mgs.clients)
+                if mgs.terminated or mas.terminated:
+                    players = 0
+                    status = 'offline'
+
+                self.wfile.write(json.dumps({
+                    'status': status,
+                    'players': players
+                }))
+
+            elif self.path == '/download/v2/Announcements.txt':
                 self._set_headers(200)
                 self.wfile.write(config.MENU_MOTD)
 
@@ -55,9 +75,15 @@ class WebServer(BaseHTTPRequestHandler):
         self.wfile.write(file_bytes)
 
 class StickOnlineHTTPServer:
-    def __init__(self, interface, port):
+    def __init__(self, interface, port, master):
         self.interface = interface
         self.port = port
+
+        # this is jank but whatever
+        self.master = master
+        global master_obj
+        master_obj = self.master
+
         self.http_server = HTTPServer((self.interface, self.port), WebServer)
 
     def __call__(self):

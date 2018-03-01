@@ -16,7 +16,7 @@ class StickOnlineMaster:
         self.db = SQLiteDB(config.SQLITE_DB_FILE)
 
     def start(self):
-        self.webserver = StickOnlineHTTPServer(config.INTERFACE_HTTP, config.PORT_HTTP)
+        self.webserver = StickOnlineHTTPServer(config.INTERFACE_HTTP, config.PORT_HTTP, self)
         t = threading.Thread(target=self.webserver)
         t.start()
 
