@@ -78,7 +78,7 @@ class Client(Mailbox):
         self.send_tcp_message(buff)
 
         buff = [packet.RESP_CHAT]
-        write_string(buff, config.GAME_MOTD)
+        write_string(buff, config.INGAME_MOTD)
         write_byte(buff, 2)
         self.send_tcp_message(buff)
 

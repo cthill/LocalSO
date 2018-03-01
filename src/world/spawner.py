@@ -31,27 +31,27 @@ class MobSpawner:
                 self.time_till_next_spawn = 0
 
     def _do_spawn(self):
-        if randint(0, int(round(self.spawner_data['special_spawn_chance'] / config.MOB_SPAWN_SPECIAL_RATE_MULTIPLIER))) != 0 or self.spawner_data['special_spawn_type'] == -1:
+        if randint(0, int(round(self.spawner_data['special_spawn_chance'] / config.MOB_SPAWN_CHANCE_BOSS_MULTIPLIER))) != 0 or self.spawner_data['special_spawn_type'] == -1:
             mob_type_to_spawn = self.spawner_data['mob_type']
         else:
             mob_type_to_spawn = self.spawner_data['special_spawn_type']
 
-        if mob_type_to_spawn == 0 and randint(0, int(round(110.0 / config.MOB_SPAWN_SPECIAL_RATE_MULTIPLIER))) == 0:
+        if mob_type_to_spawn == 0 and randint(0, int(round(110.0 / config.MOB_SPAWN_CHANCE_BOSS_MULTIPLIER))) == 0:
             mob_type_to_spawn = 2 # big blob boss
 
         if mob_type_to_spawn != 6:
-            if randint(0, int(round(14.0 / config.MOB_SPAWN_BUNNY_RATE_MULTIPLIER))) == 0:
+            if randint(0, int(round(14.0 / config.MOB_SPAWN_CHANCE_BUNNY_MULTIPLIER))) == 0:
                 if randint(0, 5) == 0:
                     mob_type_to_spawn = 11 # black bunny
                 else:
                     mob_type_to_spawn = 5 # bunny
 
         if mob_type_to_spawn == 7 or mob_type_to_spawn == 9:
-            if randint(0, int(round(180.0 / config.MOB_SPAWN_SPECIAL_RATE_MULTIPLIER))) == 0:
+            if randint(0, int(round(180.0 / config.MOB_SPAWN_CHANCE_BOSS_MULTIPLIER))) == 0:
                 mob_type_to_spawn = 10 # dark sage
 
         if mob_type_to_spawn == 9:
-            if randint(0, int(round(1000.0 / config.MOB_SPAWN_SPECIAL_RATE_MULTIPLIER))) == 0:
+            if randint(0, int(round(1000.0 / config.MOB_SPAWN_CHANCE_BOSS_MULTIPLIER))) == 0:
                 mob_type_to_spawn = 16 # sand fiend
 
         new_mob_id = self.generate_mob_id()

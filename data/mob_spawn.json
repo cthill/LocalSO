@@ -3,19 +3,6 @@
     "mob_type": 0,
     "special_spawn_type": -1,
     "special_spawn_chance": 100,
-    "max_of_type": 20,
-    "base_interval": 700,
-    "random_interval": 140,
-    "x_min": 0,
-    "x_max": 2000,
-    "y": 2120
-  },
-
-
-  {
-    "mob_type": 0,
-    "special_spawn_type": -1,
-    "special_spawn_chance": 100,
     "max_of_type": 7,
     "base_interval": 700,
     "random_interval": 140,
