@@ -28,7 +28,7 @@ class SQLiteDB:
     def _init_db(self):
         logging.info('Performing first time setup.')
         logging.info('Creating database tables...')
-        init_statements = open(config.SQLITE_DB_SQL_INIT_FILE).read()
+        init_statements = open(config.SQLITE_DB_INIT_FILE).read()
         c = self.db.cursor()
         c.executescript(init_statements)
         self.db.commit()

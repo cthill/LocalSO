@@ -1,34 +1,35 @@
 import json
 from util import ceildiv
 
-# TODO: Move config to json file?
+config_json = json.loads(open('data/config.json').read())
 
-INTERFACE = '0.0.0.0'
-INTERFACE_HTTP = '0.0.0.0'
-PORT_HTTP = 80
+INTERFACE = config_json['interface']
+INTERFACE_HTTP = config_json['interface_http']
+PORT_HTTP = config_json['port_http']
 
-# Change these parameters if you want a different experience from the original game
-MOB_SPAWN_RATE_MULTIPLIER = 2.0 # (default = 1.0) change this number to increase or decrease the mob spawn rate
-MOB_SPAWN_COUNT_MAX_MULTIPLIER = 2 # (default = 1) change this number to increase the maximum number of mobs in each area
-MOB_SPAWN_SPECIAL_RATE_MULTIPLIER = 1.0 # (default = 1.0)
-MOB_SPAWN_BUNNY_RATE_MULTIPLIER = 1.0 # (default = 1.0)
-PLAYER_DAMAGE_MULTIPLIER = 2.0 # (default = 1.0)
-PLAYER_START_GOLD = 500
+# Change these parameters (in config.json) if you want a different experience from the original game
+MOB_SPAWN_RATE_MULTIPLIER = config_json['mob_spawn_rate_multiplier']
+MOB_SPAWN_COUNT_MAX_MULTIPLIER = config_json['mob_spawn_count_max_multiplier']
+MOB_SPAWN_CHANCE_BOSS_MULTIPLIER = config_json['mob_spawn_chance_boss_multiplier']
+MOB_SPAWN_CHANCE_BUNNY_MULTIPLIER = config_json['mob_spawn_chance_bunny_multiplier']
+PLAYER_DAMAGE_MULTIPLIER = config_json['player_damage_multiplier']
+PLAYER_START_GOLD = config_json['player_start_gold']
 
 # message of the day
-GAME_MOTD = 'Welcome to LocalSO (BETA)! Current rates are %0.1fx spawn rate, %0.1fx mob count, %0.1fx damage.' % (MOB_SPAWN_RATE_MULTIPLIER, MOB_SPAWN_COUNT_MAX_MULTIPLIER, PLAYER_DAMAGE_MULTIPLIER)
-MENU_MOTD = 'Welcome to LocalSO (BETA)! Current rates are %0.1fx spawn rate, %0.1fx mob count, %0.1fx damage.' % (MOB_SPAWN_RATE_MULTIPLIER, MOB_SPAWN_COUNT_MAX_MULTIPLIER, PLAYER_DAMAGE_MULTIPLIER)
+INGAME_MOTD = config_json['ingame_motd']
+MENU_MOTD = config_json['menu_motd']
 
 # registration parameters
 REGISTER_ILLEGAL_CHARACTERS = ' #/\\:*?<>|"'
-REGISTER_CLOSED = False # set to true to disallow registration
+REGISTER_ILLEGAL_USERNAMES = ['meiun', 'danimal', 'seifer']
+REGISTER_CLOSED = config_json['register_closed']
 
 # db file
-SQLITE_DB_FILE = 'data/stickonline.db'
-SQLITE_DB_SQL_INIT_FILE = 'data/init.sql'
+SQLITE_DB_FILE = config_json['sqlite_db_file']
+SQLITE_DB_INIT_FILE = config_json['sqlite_db_init_file']
 
 # game binary files directory
-GAME_BIN_DIR = 'bin'
+GAME_BIN_DIR = config_json['game_bin_dir']
 
 # Do not change these parameters, modifying them may cause bugs or performance issues
 COMPATIBLE_GAME_VERSION = 439.0
