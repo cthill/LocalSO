@@ -368,9 +368,9 @@ class Mob():
 
         if old_section != new_section:
             self.section = new_section
-            # self.world.send_mail_message(mail_header.UPDATE_MOB_SECTION, (self, old_section, new_section))
-            # we can just call _update_mob_section directly since mobs are run on the world thread
-            self.world._update_mob_section(self, old_section, new_section)
+            # even though mobs are run on the world thread, mob.update_world_position() is called in the constructor (which can be invoked by any thread)
+            # so we must send an async message to the world thread to request the world position to be updated
+            self.world.send_mail_message(mail_header.UPDATE_MOB_SECTION, (self, old_section, new_section))
 
     def get_status_packet(self):
         self.xspeed_last_write = self.xspeed
