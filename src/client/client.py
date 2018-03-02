@@ -340,7 +340,8 @@ class Client(Mailbox):
             self.y = min_touching_y - config.PLAYER_MASK_HEIGHT - config.PLAYER_OFFSET_Y
             self.y_speed = 0
         else:
-            touching_jump_through = self.world.get_jump_through_blocks_at(bbox)
+            bottom_sliver_bbox = BoundingBox(int(round(self.x)) - config.PLAYER_OFFSET_X, int(round(self.y)) - config.PLAYER_OFFSET_Y + config.PLAYER_MASK_HEIGHT - 1, config.PLAYER_MASK_WIDTH, 1)
+            touching_jump_through = self.world.get_jump_through_blocks_at(bottom_sliver_bbox)
             if len(touching_jump_through) > 0:
                 min_touching_y = config.WORLD_HEIGHT
 
@@ -348,7 +349,7 @@ class Client(Mailbox):
                     if jump_through_block.y < min_touching_y:
                         min_touching_y = jump_through_block.y
 
-                if not bbox.bottom() < min_touching_y and self.y_speed > 0:
+                if self.y_speed > 0:
                     self.y = min_touching_y - config.PLAYER_MASK_HEIGHT - config.PLAYER_OFFSET_Y
                     self.y_speed = 0
 
