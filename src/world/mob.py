@@ -271,7 +271,8 @@ class Mob():
                 self.dmg_bbox = None
 
     def _hit_player(self, client):
-        if not client.god_mode:
+        if not client.god_mode and client.invincible_frames == 0:
+            client.invincible_frames = 30
             buff = [packet.RESP_DMG_PLAYER]
             write_ushort(buff, client.id)
             write_ushort(buff, self.mob_dat['atk_stat'])

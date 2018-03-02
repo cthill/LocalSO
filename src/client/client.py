@@ -44,6 +44,8 @@ class Client(Mailbox):
         self.facing_right = True
         self.god_mode = False
 
+        self.invincible_frames = 0
+
         # setup other
         self.terminated = False
         self.disconnect_handled = False
@@ -337,6 +339,9 @@ class Client(Mailbox):
 
             self.y = min_touching_y - config.PLAYER_MASK_HEIGHT - config.PLAYER_OFFSET_Y
             self.y_speed = 0
+
+        if self.invincible_frames > 0:
+            self.invincible_frames -= 1
 
     def kick_admin_change(self):
         buff = [packet.RESP_CHAT]
