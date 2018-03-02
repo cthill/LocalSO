@@ -280,7 +280,7 @@ class Mob():
             write_ushort(buff, config.HIT_SOUND_ID)
             write_short(buff, self.mob_dat['knockback_x'] * self.direction * 10)
             write_short(buff, self.mob_dat['knockback_y'] * 10)
-            self.world.game_server.broadcast(buff)
+            self.world.game_server.broadcast_local(buff, self.section)
 
     def _move_xspeed_check_side_collide(self, side_collide):
         if not side_collide:
@@ -316,6 +316,19 @@ class Mob():
             self.y = min_touching_y - self.h + self.y_offset
             self.xspeed_knockback = 0
             self.yspeed = 0
+        else:
+            touching_jump_through = self.world.get_jump_through_blocks_at(bbox)
+            if len(touching_jump_through) > 0:
+                min_touching_y = config.WORLD_HEIGHT
+
+                for jump_through_block in touching_jump_through:
+                    if jump_through_block.y < min_touching_y:
+                        min_touching_y = jump_through_block.y
+
+                if not bbox.bottom() < min_touching_y and self.yspeed > 0:
+                    self.y = min_touching_y - self.h + self.y_offset
+                    self.xspeed_knockback = 0
+                    self.yspeed = 0
 
     def _do_animation(self):
         if self.sprite_index == SPRITE_INDEX_ATTACK and self.image_index >= self.sprite['frames']:

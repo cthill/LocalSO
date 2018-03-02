@@ -16,9 +16,14 @@ class WorldSection:
         self.index = index
         self.x = config.WORLD_SECTION_WIDTH * self.index
         self.solid_blocks = []
+        self.jump_through_blocks = []
 
     def add_solid_block(self, block):
         self.solid_blocks.append(block)
+
+    def add_jump_through_block(self, block):
+        self.jump_through_blocks.append(block)
+
 
 class World(Mailbox):
     def __init__(self, game_server, event_scheduler):
@@ -27,6 +32,7 @@ class World(Mailbox):
         self.game_server = game_server
         self.event_scheduler = event_scheduler
         self.solid_blocks = []
+        self.jump_through_blocks = []
         self.sections = []
         self.mob_spawn = []
         self.mobs = {}
@@ -56,6 +62,19 @@ class World(Mailbox):
                 self.sections[i].add_solid_block(bbox)
 
             self.solid_blocks.append(bbox)
+
+        for d in config.JUMP_THROUGH_BLOCK_DATA:
+            x = d['x']
+            y = d['y']
+            w = d['box_w'] * d['x_scale']
+            h = d['box_h'] * d['y_scale']
+            bbox = BoundingBox(x, y, w, h)
+
+            section_range = self._find_section_range(bbox)
+            for i in range(*section_range):
+                self.sections[i].add_jump_through_block(bbox)
+
+            self.jump_through_blocks.append(bbox)
 
         # create the mob spawners
         for i in range(len(config.MOB_SPAWN)):
@@ -217,6 +236,16 @@ class World(Mailbox):
             for solid_block in self.sections[i].solid_blocks:
                 if solid_block.check_collision(bbox):
                     touching.append(solid_block)
+
+        return touching
+
+    def get_jump_through_blocks_at(self, bbox):
+        touching = []
+        section_range = self._find_section_range(bbox)
+        for i in range(*section_range):
+            for jump_through_block in self.sections[i].jump_through_blocks:
+                if jump_through_block.check_collision(bbox):
+                    touching.append(jump_through_block)
 
         return touching
 

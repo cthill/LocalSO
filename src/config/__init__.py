@@ -58,6 +58,7 @@ WORLD_TERMINAL_VELOCITY = 14
 
 
 SOLID_BLOCK_DATA = []
+JUMP_THROUGH_BLOCK_DATA = []
 MOB_DATA = []
 MOB_SPAWN = []
 
@@ -68,6 +69,7 @@ block_data = json.loads(block_data_json)
 # add solid blocks
 SOLID_BLOCK_DATA += block_data['block_type_1']
 SOLID_BLOCK_DATA += block_data['block_type_2']
+JUMP_THROUGH_BLOCK_DATA += block_data['block_type_3']
 
 # load mob json
 mob_data_json = open(DATA_DIR + 'mob.json').read()
