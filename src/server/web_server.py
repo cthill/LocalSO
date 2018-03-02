@@ -6,6 +6,7 @@ import SocketServer
 
 import config
 
+log = logging.getLogger('web_svr')
 # this is jank but whatever
 master_obj = None
 
@@ -60,9 +61,9 @@ class WebServer(BaseHTTPRequestHandler):
             else:
                 self._set_headers(404)
                 self.wfile.write('Not found.')
-                logging.info('Unknown http path: %s' % self.path)
+                log.info('Unknown http path: %s' % self.path)
         except Exception as e:
-            logging.info('Error handling http request %s' % e)
+            log.error('Error handling http request %s' % e)
             self._set_headers(500)
             self.wfile.write('Internal server error.')
 
@@ -87,7 +88,7 @@ class StickOnlineHTTPServer:
         self.http_server = HTTPServer((self.interface, self.port), WebServer)
 
     def __call__(self):
-        logging.info('http server listening on %s:%s' % (self.interface, self.port))
+        log.info('http server listening on %s:%s' % (self.interface, self.port))
         self.http_server.serve_forever()
 
     def stop(self):

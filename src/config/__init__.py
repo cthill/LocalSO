@@ -1,5 +1,10 @@
 import json
+import logging
 from util import ceildiv
+
+logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+                    datefmt='%d-%m-%y %H:%M:%S')
 
 config_json = json.loads(open('data/config.json').read())
 

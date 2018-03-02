@@ -9,32 +9,33 @@ import config
 
 class SQLiteDB:
     def __init__(self, db_file):
+        self.log = logging.getLogger('db')
         self.db_file = db_file
         self.db_lock = Lock()
 
         should_init_db = not os.path.isfile(self.db_file)
 
         self.db = sqlite3.connect(self.db_file, check_same_thread=False)
-        logging.info('Connected to database %s' % (self.db_file))
+        self.log.info('Connected to database %s' % (self.db_file))
         self.db.row_factory = sqlite3.Row
 
         try:
             if should_init_db:
                 self._init_db()
         except Exception as e:
-            logging.error('Error initializing the datbase. Please delete %s and try again.', config.SQLITE_DB_FILE)
+            self.log.error('Error initializing the datbase. Please delete %s and try again.', config.SQLITE_DB_FILE)
             raise e
 
     def _init_db(self):
-        logging.info('Performing first time setup.')
-        logging.info('Creating database tables...')
+        self.log.info('Performing first time setup.')
+        self.log.info('Creating database tables...')
         init_statements = open(config.SQLITE_DB_INIT_FILE).read()
         c = self.db.cursor()
         c.executescript(init_statements)
         self.db.commit()
-        logging.info('Done.')
+        self.log.info('Done.')
 
-        logging.info('You must register an admin account.')
+        self.log.info('You must register an admin account.')
         admin_username = raw_input("  username: ")
         admin_password = raw_input("  password: ")
 
@@ -57,8 +58,8 @@ class SQLiteDB:
         (?, ?, ?, ?, null, null, 0, 1080, 300, 739, 1200, 128, 128, 128, 128, 128, 255, 0.0, 250, 0, 0, 0, 0, 0, 0, 0, 9999999, '')
         ''', (admin_username, admin_passhash, now, now))
         self.db.commit()
-        logging.info('Created admin account %s', admin_username)
-        logging.info('To grant admin access to other users, use the in game commands.')
+        self.log.info('Created admin account %s', admin_username)
+        self.log.info('To grant admin access to other users, use the in game commands.')
 
     def get_client(self, name):
         with self.db_lock:

@@ -14,7 +14,7 @@ def tcp_write(conn, data, enc=False):
     # convert to string and write
     payload_str = ''.join(chr(x) for x in payload)
     conn.send(payload_str)
-    # logging.info("TCP wrote (enc=%s) %s" % (enc, buff_to_str(data)))
+    # logging.debug("TCP wrote (enc=%s) %s" % (enc, buff_to_str(data)))
 
 def udp_write(sock, addr, data, enc=False):
     data_enc = bytearray(data)
@@ -28,4 +28,4 @@ def udp_write(sock, addr, data, enc=False):
     # convert to string and write
     payload_str = ''.join(chr(x) for x in payload)
     sock.sendto(payload_str, addr)
-    # logging.info("UDP wrote (enc=%s) %s" % (enc, buff_to_str(data)))
+    # logging.debug("UDP wrote (enc=%s) %s" % (enc, buff_to_str(data)))
