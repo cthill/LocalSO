@@ -1,4 +1,5 @@
 import logging
+from random import randint
 
 import config
 from mailbox import mail_header
@@ -197,5 +198,6 @@ def send_public_chat(client, chat_str):
 
 def spawn(client, mob):
     spawn_y = client.get_bbox().bottom() - mob['height'] * mob['scale']
-    new_mob = Mob(client.world.generate_mob_id(), mob['id'], client.x, spawn_y, None, client.world)
+    spawn_x = client.get_bbox().hcenter() + randint(0, 100) - 50
+    new_mob = Mob(client.world.generate_mob_id(), mob['id'], spawn_x, spawn_y, None, client.world)
     client.world.send_mail_message(mail_header.MSG_ADD_MOB, new_mob)

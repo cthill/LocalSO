@@ -317,7 +317,8 @@ class Mob():
             self.xspeed_knockback = 0
             self.yspeed = 0
         else:
-            touching_jump_through = self.world.get_jump_through_blocks_at(bbox)
+            bottom_sliver_bbox = BoundingBox(x_as_int - self.x_offset, y_as_int - self.y_offset + self.h - 1, self.w, 1)
+            touching_jump_through = self.world.get_jump_through_blocks_at(bottom_sliver_bbox)
             if len(touching_jump_through) > 0:
                 min_touching_y = config.WORLD_HEIGHT
 
@@ -325,7 +326,7 @@ class Mob():
                     if jump_through_block.y < min_touching_y:
                         min_touching_y = jump_through_block.y
 
-                if not bbox.bottom() < min_touching_y and self.yspeed > 0:
+                if self.yspeed > 0:
                     self.y = min_touching_y - self.h + self.y_offset
                     self.xspeed_knockback = 0
                     self.yspeed = 0
