@@ -124,7 +124,7 @@ class AccountServer:
             self._deny_request(conn, addr, 'You are banned.')
             return
 
-        if self.db.get_client(username) is not None:
+        if self.db.get_client(username.lower()) is not None:
             self._deny_request(conn, addr, 'That username is taken.')
             return
 
@@ -173,11 +173,11 @@ class AccountServer:
             self._deny_request(conn, addr, 'Your password is invalid. Please try again.')
             return
 
-        if self.master.get_game_server().name_to_client.get(username) is not None:
+        if self.master.get_game_server().name_to_client.get(username.lower()) is not None:
             self._deny_request(conn, addr, 'The requested account is currently in use.')
             return
 
-        db_client = self.db.get_client(username)
+        db_client = self.db.get_client(username.lower())
         if db_client is None:
             self._deny_request(conn, addr, 'Account does not exist.')
             return
@@ -192,7 +192,7 @@ class AccountServer:
 
         client_data = {
             'id': db_client['id'],
-            'name': db_client['name'],
+            'name': username,#db_client['name'], # in the original game, usernames were not case sensitive. But if you signed in with case changed in your name, people would see it.
             'clan': db_client['clan'],
             'weapon': db_client['weapon_equipped'],
             'hat': db_client['hat_equipped'],
@@ -309,7 +309,7 @@ class AccountServer:
             self._deny_request(conn, addr, 'Save Error: Incorrect game version.')
             return
 
-        db_client = self.db.get_client(username)
+        db_client = self.db.get_client(username.lower())
         if db_client is None:
             self._deny_request(conn, addr, 'Save Error: Client not found.')
             return

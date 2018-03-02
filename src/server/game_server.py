@@ -80,7 +80,7 @@ class GameServer:
         self.clients.append(new_client)
         self.id_to_client[client_id] = new_client
         self.client_to_id[new_client] = client_id
-        self.name_to_client[client_dat['name']] = new_client
+        self.name_to_client[client_dat['name'].lower()] = new_client
         new_client.start()
 
     def client_disconnect(self, client):
@@ -92,7 +92,7 @@ class GameServer:
 
         del self.id_to_client[client_id]
         del self.client_to_id[client]
-        del self.name_to_client[client.name]
+        del self.name_to_client[client.name.lower()]
         self.clients.remove(client)
 
     def get_num_players(self):

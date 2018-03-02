@@ -56,7 +56,7 @@ class SQLiteDB:
         )
         VALUES
         (?, ?, ?, ?, null, null, 0, 1080, 300, 739, 1200, 128, 128, 128, 128, 128, 255, 0.0, 250, 0, 0, 0, 0, 0, 0, 0, 9999999, '')
-        ''', (admin_username, admin_passhash, now, now))
+        ''', (admin_username.lower(), admin_passhash, now, now))
         self.db.commit()
         self.log.info('Created admin account %s', admin_username)
         self.log.info('To grant admin access to other users, use the in game commands.')
@@ -64,7 +64,7 @@ class SQLiteDB:
     def get_client(self, name):
         with self.db_lock:
             c = self.db.cursor()
-            c.execute('SELECT * FROM clients WHERE name=?', (name,))
+            c.execute('SELECT * FROM clients WHERE name=?', (name.lower(),))
             db_client = c.fetchone()
             return db_client
 
@@ -83,7 +83,7 @@ class SQLiteDB:
             )
             VALUES
             (?, ?, ?, ?, null, null, 0, 1080, 300, 104, 67, 1, 1, 1, 1, 1, 1, 0.0, ?, 0, 0, 0, 0, 0, 0, 0, ?, '')
-            ''', (name, passhash, now, now, admin_level, config.PLAYER_START_GOLD))
+            ''', (name.lower(), passhash, now, now, admin_level, config.PLAYER_START_GOLD))
             self.db.commit()
 
     def get_items(self, client_id):
