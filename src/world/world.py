@@ -195,6 +195,10 @@ class World(Mailbox):
             # interpolate the client's state
             client.interpolate_state()
 
+        for mob_id in self.mobs:
+            if mob.write_packet_this_step:
+                mob.reset_write_packet_flag()
+
         self.world_step_num += 1
 
     def solid_block_at(self, bbox):

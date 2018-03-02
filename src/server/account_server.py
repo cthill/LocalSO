@@ -128,8 +128,8 @@ class AccountServer:
             self._deny_request(conn, addr, 'That username is taken.')
             return
 
-
         self.db.create_client(username, pass_hash)
+        self.log.info('account created %s:%s %s' % (addr[0], addr[1], username))
 
         buff = [packet.RESP_SUCCESS]
         tcp_write(conn, buff, enc=True)
