@@ -6,6 +6,7 @@ from net import packet
 from net.buffer import *
 from world.mob import Mob
 
+log = logging.getLogger('admin_cmd')
 CHAT_RESPONSE_COLOR = 1
 CHAT_PUBLIC_COLOR = 2
 
@@ -88,7 +89,7 @@ def handle_admin_command(client, command):
                 target_name = tokens[1]
                 target_client_obj = client.game_server.name_to_client.get(target_name)
                 if target_client_obj is not None:
-                    logging.info('%s kicked %s.' % (client, target_client_obj))
+                    log.info('%s kicked %s.' % (client, target_client_obj))
                     send_public_chat(client, '%s was kicked.' % target_client_obj.name)
                     target_client_obj.terminated = True
                 else:
@@ -104,7 +105,7 @@ def handle_admin_command(client, command):
 
                 if target_client_db is not None:
                     db_ref.ban_unban_client(target_client_db['id'], cmd == 'ban')
-                    logging.info('%s %sned %s.' % (client, cmd, target_client_db['name']))
+                    log.info('%s %sned %s.' % (client, cmd, target_client_db['name']))
                     send_public_chat(client, '%s was %sned.' % (target_client_db['name'], cmd))
 
                     target_client_obj = client.game_server.name_to_client.get(target_name)
@@ -125,7 +126,7 @@ def handle_admin_command(client, command):
                     if target_client_db is not None:
                         db_ref.set_admin_client(target_client_db['id'], admin_val == 'true')
 
-                        logging.info('%s set %s admin %s.' % (client, target_client_db['name'], admin_val))
+                        log.info('%s set %s admin %s.' % (client, target_client_db['name'], admin_val))
                         send_chat_response(client, 'Set %s admin to %s.' % (target_name, admin_val))
 
                         target_client_obj = client.game_server.name_to_client.get(target_name)
@@ -146,7 +147,7 @@ def handle_admin_command(client, command):
 
     except Exception as e:
         bad_command_single(client, cmd)
-        logging.error('Error processing client %s command %s %s' % (client, command, e))
+        log.error('Error processing client %s command %s %s' % (client, command, e))
 
 
 def bad_command(client, help_text=False):

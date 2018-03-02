@@ -15,6 +15,8 @@ from util import buff_to_str
 
 class GameServer:
     def __init__(self, interface, port, master):
+        self.log = logging.getLogger('game_svr')
+
         self.interface = interface
         self.port = port
         self.master = master
@@ -45,18 +47,18 @@ class GameServer:
         s.bind((self.interface, self.port))
         s.listen(1)
 
-        logging.info('Game server listening %s:%s' % (self.interface, self.port))
+        self.log.info('listening %s:%s' % (self.interface, self.port))
 
         while not self.terminated:
             conn, addr = s.accept()
-            logging.info('Game server new connection: %s:%s' % (addr))
+            self.log.info('new connection: %s:%s' % (addr))
             self._client_accept(conn, addr)
 
     def udp_server(self, interface, port):
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.bind((interface, port))
 
-        logging.info('udp server listening %s:%s' % (interface, port))
+        self.log.info('udp listening %s:%s' % (interface, port))
 
         while not self.terminated:
             raw_data, addr = s.recvfrom(1024) # read up to 1024 bytes
@@ -65,7 +67,7 @@ class GameServer:
             if client_id in self.id_to_client:
                 self.id_to_client[client_id].handle_udp_packet(data)
 
-            logging.info("udp message: %s" % buff_to_str(data))
+            self.log.debug('udp message: %s' % buff_to_str(data))
 
     def _client_accept(self, conn, addr):
         client_dat = self.master.get_pending_game_server_connection(addr[0])
@@ -143,7 +145,7 @@ class GameServer:
                     client.socket.close()
                 except:
                     pass
-                logging.info('Client %s timed out.' % client)
+                self.log.info('Client %s timed out.' % client)
 
     def get_clients(self):
         return self.clients
