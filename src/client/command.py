@@ -87,7 +87,7 @@ def handle_admin_command(client, command):
         elif cmd == 'kick':
             if len(tokens) == 2:
                 target_name = tokens[1]
-                target_client_obj = client.game_server.name_to_client.get(target_name)
+                target_client_obj = client.game_server.name_to_client.get(target_name.lower())
                 if target_client_obj is not None:
                     log.info('%s kicked %s.' % (client, target_client_obj))
                     send_public_chat(client, '%s was kicked.' % target_client_obj.name)
@@ -101,14 +101,14 @@ def handle_admin_command(client, command):
             if len(tokens) == 2:
                 db_ref = client.game_server.master.db
                 target_name = tokens[1]
-                target_client_db = db_ref.get_client(target_name)
+                target_client_db = db_ref.get_client(target_name.lower())
 
                 if target_client_db is not None:
                     db_ref.ban_unban_client(target_client_db['id'], cmd == 'ban')
                     log.info('%s %sned %s.' % (client, cmd, target_client_db['name']))
                     send_public_chat(client, '%s was %sned.' % (target_client_db['name'], cmd))
 
-                    target_client_obj = client.game_server.name_to_client.get(target_name)
+                    target_client_obj = client.game_server.name_to_client.get(target_name.lower())
                     if target_client_obj is not None:
                         target_client_obj.terminated = True
                 else:
@@ -122,14 +122,14 @@ def handle_admin_command(client, command):
                 target_name = tokens[1]
                 admin_val = tokens[2]
                 if admin_val == 'true' or admin_val == 'false':
-                    target_client_db = db_ref.get_client(target_name)
+                    target_client_db = db_ref.get_client(target_name.lower())
                     if target_client_db is not None:
                         db_ref.set_admin_client(target_client_db['id'], admin_val == 'true')
 
                         log.info('%s set %s admin %s.' % (client, target_client_db['name'], admin_val))
                         send_chat_response(client, 'Set %s admin to %s.' % (target_name, admin_val))
 
-                        target_client_obj = client.game_server.name_to_client.get(target_name)
+                        target_client_obj = client.game_server.name_to_client.get(target_name.lower())
                         if target_client_obj is not None:
                             target_client_obj.kick_admin_change()
                     else:
