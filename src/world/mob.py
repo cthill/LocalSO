@@ -374,12 +374,6 @@ class Mob():
             self.world.send_mail_message(mail_header.UPDATE_MOB_SECTION, (self, old_section, new_section))
 
     def get_status_packet(self):
-        self.xspeed_last_write = self.xspeed
-        self.yspeed_last_write = self.yspeed
-        self.direction_last_write = self.direction
-        self.sprite_index_last_write = self.sprite_index
-        self.write_packet_this_step = False
-
         # send mob info
         buff = [packet.RESP_MOB_STATUS]
         write_ushort(buff, self.id) # mob unique id
@@ -399,6 +393,13 @@ class Mob():
             write_short(buff, int(round(self.xspeed_knockback * 10)))
 
         return buff
+
+    def reset_write_packet_flag(self):
+        self.xspeed_last_write = self.xspeed
+        self.yspeed_last_write = self.yspeed
+        self.direction_last_write = self.direction
+        self.sprite_index_last_write = self.sprite_index
+        self.write_packet_this_step = False
 
     def _die(self, broadcast_death=True):
         self.broadcast_death = broadcast_death
