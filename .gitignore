@@ -1,6 +1,6 @@
 *.pyc
-stickonline.db
-bin/StickOnline.exe
-bin/Resources.sor
-bin/Readme.txt
-data/mob_spawn.default.json
+server/data/stickonline.db
+server/data/mob_spawn.default.json
+server/bin/StickOnline.exe
+server/bin/Resources.sor
+server/bin/Readme.txt
