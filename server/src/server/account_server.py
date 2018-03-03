@@ -21,7 +21,6 @@ class AccountServer:
         self.master = master
 
         self.terminated = False
-        self.counter = 0
 
     def __call__(self):
         # listen tcp
@@ -231,7 +230,6 @@ class AccountServer:
 
         # write num_items and
         items = self.db.get_items(db_client['id'])
-        #items = [0x16, 0x20, 0x30, 0x32, 0x0a, 0x27] # whip and bunny ears and heavens wrath and scotty's axe
         write_byte(buff, len(items))
         for i in range(len(items)):
             write_ushort(buff, items[i])
