@@ -1,7 +1,7 @@
 # LocalSO
 LocalSO is a cross platform Stick Online server emulator written in Python. It works with the Stick Online client version 0.0227 and implements all features supported by the original game server.
 
-The purpose of this project is to preserve Stick Online for all of its fans. The official server was shut down long ago, and there is no source code available.
+The purpose of this project is to preserve Stick Online for all of its past players and fans. The official server was shut down long ago, and there is no source code available.
 
 ## Quick Start
 Requirements:
