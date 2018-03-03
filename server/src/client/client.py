@@ -365,6 +365,7 @@ class Client(Mailbox):
         def dc_me():
             self.terminated = True
             self.socket.close()
+            self.log.info('kick_with_reason socket close')
         self.world.event_scheduler.schedule_event(dc_me, 5)
 
     def handle_udp_packet(self, data):

@@ -143,6 +143,7 @@ class GameServer:
                 client.terminated = True
                 try:
                     client.socket.close()
+                    self.log.info('Client %s timeout socket close' % client)
                 except:
                     pass
                 self.log.info('Client %s timed out.' % client)
