@@ -1,6 +1,7 @@
 import logging
 import threading
 from datetime import datetime
+import socket
 import traceback
 
 import command
@@ -102,32 +103,40 @@ class Client(Mailbox):
                     tcp_write(self.socket, payload)
 
         except Exception as e:
-            if not self.terminated:
-                self.log.error('Unhandled exception send_thread %s' % (e))
-                traceback.print_exc()
+            self.log.error('Unhandled exception send_thread %s' % (e))
+            traceback.print_exc()
         finally:
+            self.socket.shutdown(socket.SHUT_WR)
             self._terminate()
 
     def _recv_thread(self):
         try:
+            input_buffer = bytearray()
             while not self.terminated:
-                size = bytearray(self.socket.recv(2))
-                if not size:
+                data = bytearray(self.socket.recv(4096))
+                if not data:
                     self.log.info('peer disconnect')
                     break
-                size_int = read_short(size, 0)
-                self._handle_packet(size_int)
+                input_buffer += data
+
+                while len(input_buffer) >= 2:
+                    packet_size = read_ushort(input_buffer, 0)
+                    if len(input_buffer) - 2 < packet_size:
+                        break
+
+                    packet_data = input_buffer[2:packet_size+2]
+                    input_buffer = input_buffer[packet_size+2:]
+                    self._handle_packet(packet_data)
+
         except Exception as e:
-            if not self.terminated:
-                self.log.error('Unhandled exception recv_thread %s' % (e))
-                traceback.print_exc()
+            self.log.error('Unhandled exception recv_thread %s' % (e))
+            traceback.print_exc()
         finally:
+            self.socket.shutdown(socket.SHUT_RD)
             self._terminate()
 
     def _terminate(self):
         if not self.disconnect_handled:
-            import traceback
-            traceback.print_stack()
             self.disconnect_handled = True
             self.world.client_disconnect(self)
             self.game_server.client_disconnect(self)
@@ -135,15 +144,11 @@ class Client(Mailbox):
             self.log.info('disconnected')
 
     def disconnect(self):
-        tcp_write(self.socket, [])
         self.terminated = True
+        self.socket.shutdown(socket.SHUT_RDWR)
 
-    def _handle_packet(self, size):
+    def _handle_packet(self, data):
         self.last_recv_timestamp = datetime.now()
-
-        raw_data = self.socket.recv(size)
-        data = bytearray(raw_data)
-
         self.log.debug('data: %s' % (buff_to_str(data)))
 
         header = data[0]
@@ -364,12 +369,7 @@ class Client(Mailbox):
         write_string(buff, reason)
         write_byte(buff, 1)
         self.send_tcp_message(buff)
-
-        def dc_me():
-            self.terminated = True
-            self.socket.close()
-            self.log.info('kick_with_reason socket close')
-        self.world.event_scheduler.schedule_event(dc_me, 5)
+        self.world.event_scheduler.schedule_event(self.disconnect, 5)
 
     def handle_udp_packet(self, data):
         self.last_recv_timestamp = datetime.now()
