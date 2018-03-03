@@ -113,6 +113,7 @@ class Client(Mailbox):
             while not self.terminated:
                 size = bytearray(self.socket.recv(2))
                 if not size:
+                    self.log.info('peer disconnect')
                     break
                 size_int = read_short(size, 0)
                 self._handle_packet(size_int)
@@ -125,6 +126,8 @@ class Client(Mailbox):
 
     def _terminate(self):
         if not self.disconnect_handled:
+            import traceback
+            traceback.print_stack()
             self.disconnect_handled = True
             self.world.client_disconnect(self)
             self.game_server.client_disconnect(self)
