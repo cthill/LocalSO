@@ -1,0 +1,290 @@
+[
+    {
+        "id": 1,
+        "name": "Feather Hat"
+    },
+    {
+        "id": 2,
+        "name": "Knight Helm"
+    },
+    {
+        "id": 3,
+        "name": "Ninja Mask"
+    },
+    {
+        "id": 4,
+        "name": "Bandit Mask"
+    },
+    {
+        "id": 5,
+        "name": "Kings Crown"
+    },
+    {
+        "id": 6,
+        "name": "Viking Helm"
+    },
+    {
+        "id": 7,
+        "name": "Jester Hat"
+    },
+    {
+        "id": 8,
+        "name": "Fireman Hat"
+    },
+    {
+        "id": 9,
+        "name": "Shady Hat"
+    },
+    {
+        "id": 10,
+        "name": "Wooden Hammer"
+    },
+    {
+        "id": 11,
+        "name": "Short Sword"
+    },
+    {
+        "id": 12,
+        "name": "Dagger"
+    },
+    {
+        "id": 13,
+        "name": "Red Candy Cane"
+    },
+    {
+        "id": 14,
+        "name": "Blue Candy Cane"
+    },
+    {
+        "id": 15,
+        "name": "Green Candy Cane"
+    },
+    {
+        "id": 16,
+        "name": "Santa Hat"
+    },
+    {
+        "id": 17,
+        "name": "GM Helm"
+    },
+    {
+        "id": 18,
+        "name": "Green Bandana"
+    },
+    {
+        "id": 19,
+        "name": "Red Bandana"
+    },
+    {
+        "id": 20,
+        "name": "Blue Bandana"
+    },
+    {
+        "id": 21,
+        "name": "Yellow Bandana"
+    },
+    {
+        "id": 22,
+        "name": "Whip"
+    },
+    {
+        "id": 23,
+        "name": "Great Sword"
+    },
+    {
+        "id": 24,
+        "name": "Magic Bag"
+    },
+    {
+        "id": 25,
+        "name": "Wizard Hat"
+    },
+    {
+        "id": 26,
+        "name": "Ice Crown"
+    },
+    {
+        "id": 27,
+        "name": "Bunny Ears"
+    },
+    {
+        "id": 28,
+        "name": "Frog Hat"
+    },
+    {
+        "id": 29,
+        "name": "Katana"
+    },
+    {
+        "id": 30,
+        "name": "Inferno Sword"
+    },
+    {
+        "id": 31,
+        "name": "Dragoon Helm"
+    },
+    {
+        "id": 32,
+        "name": "Black Bunny Ears"
+    },
+    {
+        "id": 33,
+        "name": "Skull Mask"
+    },
+    {
+        "id": 34,
+        "name": "Gravity Crown"
+    },
+    {
+        "id": 35,
+        "name": "Pirate Hat"
+    },
+    {
+        "id": 36,
+        "name": "Tree Branch"
+    },
+    {
+        "id": 37,
+        "name": "Scythe"
+    },
+    {
+        "id": 38,
+        "name": "Top Hat"
+    },
+    {
+        "id": 39,
+        "name": "Stone Hammer"
+    },
+    {
+        "id": 40,
+        "name": "Flame Gauntlet"
+    },
+    {
+        "id": 41,
+        "name": "Edge Punisher"
+    },
+    {
+        "id": 42,
+        "name": "Hatchet"
+    },
+    {
+        "id": 43,
+        "name": "Gaia Crown"
+    },
+    {
+        "id": 44,
+        "name": "Emerald Sword"
+    },
+    {
+        "id": 45,
+        "name": "Punkin Hat"
+    },
+    {
+        "id": 46,
+        "name": "Jacko Hat"
+    },
+    {
+        "id": 47,
+        "name": "Ghost Lantern"
+    },
+    {
+        "id": 48,
+        "name": "Heavens Wrath"
+    },
+    {
+        "id": 49,
+        "name": "Okry"
+    },
+    {
+        "id": 50,
+        "name": "Scotty's Axe"
+    },
+    {
+        "id": 51,
+        "name": "The Gauntlet"
+    },
+    {
+        "id": 52,
+        "name": "Gunblade"
+    },
+    {
+        "id": 53,
+        "name": "Princess Jenny's Crown"
+    },
+    {
+        "id": 54,
+        "name": "Bella's Magical Death Weapon Extraordinaire"
+    },
+    {
+        "id": 55,
+        "name": "Dark Knight Helm"
+    },
+    {
+        "id": 56,
+        "name": "Chaos's Fedora"
+    },
+    {
+        "id": 57,
+        "name": "Fedora"
+    },
+    {
+        "id": 58,
+        "name": "Green Beret"
+    },
+    {
+        "id": 59,
+        "name": "Slasher"
+    },
+    {
+        "id": 60,
+        "name": "Deranged Bunny Ears"
+    },
+    {
+        "id": 61,
+        "name": "Easter Egg Hat"
+    },
+    {
+        "id": 62,
+        "name": "Bandit Cover"
+    },
+    {
+        "id": 63,
+        "name": "Spire Dagger"
+    },
+    {
+        "id": 64,
+        "name": "Legendary Sand Blade"
+    },
+    {
+        "id": 65,
+        "name": "Froggy Hat"
+    },
+    {
+        "id": 66,
+        "name": "Snowball"
+    },
+    {
+        "id": 67,
+        "name": "Blade Crown"
+    },
+    {
+        "id": 68,
+        "name": "Classic Crown"
+    },
+    {
+        "id": 69,
+        "name": "Guardian Helm"
+    },
+    {
+        "id": 70,
+        "name": "Hyperion"
+    },
+    {
+        "id": 71,
+        "name": "Dark Gauntlet"
+    },
+    {
+        "id": 72,
+        "name": "Lingus Gauntlet"
+    }
+]

@@ -356,14 +356,15 @@ class Client(Mailbox):
         if self.invincible_frames > 0:
             self.invincible_frames -= 1
 
-    def kick_admin_change(self):
+    def kick_with_reason(self, reason):
         buff = [packet.RESP_CHAT]
-        write_string(buff, 'There has been a change to your admin status. You will now be disconnected.')
+        write_string(buff, reason)
         write_byte(buff, 1)
         self.send_tcp_message(buff)
 
         def dc_me():
             self.terminated = True
+            self.socket.close()
         self.world.event_scheduler.schedule_event(dc_me, 5)
 
     def handle_udp_packet(self, data):

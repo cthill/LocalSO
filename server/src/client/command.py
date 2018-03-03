@@ -132,11 +132,31 @@ def handle_admin_command(client, command):
 
                         target_client_obj = client.game_server.name_to_client.get(target_name.lower())
                         if target_client_obj is not None:
-                            target_client_obj.kick_admin_change()
+                            target_client_obj.kick_with_reason('There has been a change to your admin status. You will now be disconnected.')
                     else:
                         send_chat_response(client, 'player %s not found.' % target_name)
                 else:
                     bad_command_single(client, cmd)
+            else:
+                bad_command_single(client, cmd)
+
+        elif cmd == 'item':
+            if len(tokens) == 2:
+                item_id = int(tokens[1])
+                if item_id >= 1 and item_id <= 72:
+                    db_ref = client.game_server.master.db
+                    client_db = db_ref.get_client(client.name.lower())
+                    if client_db is not None:
+                        client_db_id = client_db['id']
+                        item_list = db_ref.get_items(client_db_id)
+                        if len(item_list) < 20:
+                            db_ref.add_item_on_save(client_db_id, item_id)
+                            item_name = config.ITEM_DATA[item_id]['name']
+                            client.kick_with_reason('%s added to your inventory. You will now be disconnected.' % item_name)
+                        else:
+                            send_chat_response(client, 'You have too many items. Please make room in your inventory.')
+                else:
+                    send_chat_response(client, 'Invalid item id.')
             else:
                 bad_command_single(client, cmd)
 
@@ -149,7 +169,8 @@ def handle_admin_command(client, command):
     except Exception as e:
         bad_command_single(client, cmd)
         log.error('Error processing client %s command %s %s' % (client, command, e))
-
+        import traceback
+        traceback.print_exc()
 
 def bad_command(client, help_text=False):
     lines = [
@@ -157,7 +178,7 @@ def bad_command(client, help_text=False):
         "  spawn <mob_id> [amount], spawnall [amount]",
         "  hurt, hurtall, kill, killall, godmode",
         "  kick <name>, ban <name>, unban <name>",
-        "  setadmin <name> <true|false>"
+        "  setadmin <name> <true|false>, item <id>"
     ]
 
     for line in lines:
@@ -177,6 +198,8 @@ def bad_command_single(client, cmd):
         usage = 'unban <name>'
     elif cmd == 'setadmin':
         usage = 'setadmin <name> <true|false>'
+    elif cmd == 'item':
+        usage = 'item <id>'
     else:
         bad_command(client)
         return

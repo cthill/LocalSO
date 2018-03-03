@@ -61,6 +61,7 @@ SOLID_BLOCK_DATA = []
 JUMP_THROUGH_BLOCK_DATA = []
 MOB_DATA = []
 MOB_SPAWN = []
+ITEM_DATA = {}
 
 DATA_DIR = 'data/'
 # load world data json
@@ -80,3 +81,8 @@ MOB_DATA += mob_data
 mob_spawn_json = open(DATA_DIR + 'mob_spawn.json').read()
 mob_spawn = json.loads(mob_spawn_json)
 MOB_SPAWN += mob_spawn
+
+# load item data
+item_json = open(DATA_DIR + 'item.json').read()
+for item in json.loads(item_json):
+    ITEM_DATA[item['id']] = item
