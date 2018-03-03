@@ -75,6 +75,8 @@ class GameServer:
             conn.close()
             return
 
+        conn.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, True)
+
         client_id = client_dat['id']
         new_client = Client(self, self.world, conn, client_id, client_dat)
         self.clients.append(new_client)
