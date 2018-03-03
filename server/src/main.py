@@ -61,7 +61,7 @@ class StickOnlineMaster:
 
 if __name__ == '__main__':
     logging.basicConfig(format='%(message)s', level=logging.INFO)
-    logging.info('LocalSO v0.1')
+    logging.info('LocalSO v1.0')
 
     files = ['Resources.sor', 'StickOnline.exe', 'Readme.txt']
     for filename in files:

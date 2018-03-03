@@ -6,7 +6,7 @@ logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                     datefmt='%d-%m-%y %H:%M:%S')
 
-config_json = json.loads(open('data/config.json').read())
+config_json = json.loads(open('config.json').read())
 
 INTERFACE = config_json['interface']
 INTERFACE_HTTP = config_json['interface_http']

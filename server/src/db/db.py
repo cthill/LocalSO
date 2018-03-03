@@ -35,7 +35,7 @@ class SQLiteDB:
         self.db.commit()
         self.log.info('Done.')
 
-        self.log.info('You must register an admin account.')
+        print 'You must register an admin account.'
         admin_username = raw_input("  username: ")
         admin_password = raw_input("  password: ")
 
@@ -58,8 +58,8 @@ class SQLiteDB:
         (?, ?, ?, ?, null, null, 0, 1080, 300, 739, 1200, 128, 128, 128, 128, 128, 255, 0.0, 250, 0, 0, 0, 0, 0, 0, 0, 9999999, '')
         ''', (admin_username.lower(), admin_passhash, now, now))
         self.db.commit()
-        self.log.info('Created admin account %s', admin_username)
-        self.log.info('To grant admin access to other users, use the in game commands.')
+        print 'Created admin account %s' % admin_username
+        print 'To grant admin access to other users, use the in game commands.'
 
     def get_client(self, name):
         with self.db_lock:
