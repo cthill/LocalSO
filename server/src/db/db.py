@@ -45,18 +45,40 @@ class SQLiteDB:
 
         c = self.db.cursor()
         now = datetime.now().isoformat()
+
+        # create account
         c.execute('''
         INSERT INTO clients
         (
-            name, passhash, register_date, last_login_date, last_save_date,
+            id, name, passhash, register_date, last_login_date, last_save_date,
             last_login_ip, banned, spawn_x, spawn_y, hp, mp, stat_str, stat_agi,
             stat_int, stat_vit, int_unknown_1, level, experience, admin_level,
             stat_points, int_unknown_2, weapon_equipped, hat_equipped, int_unknown_3,
             int_unknown_4, int_unknown_5, gold, clan
         )
         VALUES
-        (?, ?, ?, ?, null, null, 0, 1080, 300, 739, 1200, 128, 128, 128, 128, 128, 255, 0.0, 250, 0, 0, 0, 0, 0, 0, 0, 9999999, '')
-        ''', (admin_username.lower(), admin_passhash, now, now))
+        (?, ?, ?, ?, ?, null, null, 0, 1080, 300, 739, 1200, 128, 128, 128, 128, 128, 255, 0.0, 250, 0, 0, 0, 0, 0, 0, 0, 9999999, '')
+        ''', (0, admin_username.lower(), admin_passhash, now, now))
+
+        # add items
+        items = [
+            17, # gm helm
+            31, # dragoon helm
+            10, # wood hammer
+            39, # stone hammer
+            49, # Okry
+            50, # Scotty's Axe
+            52, # Gunblade
+            53, # Princess Jenny's Crown
+            54, # Bella's Magical Death Weapon Extraordinaire
+            70, # Hyperion
+            71, # Dark Gauntlet
+            72  # Lingus Gauntlet
+        ]
+        for item_id in items:
+            c.execute('INSERT INTO inventory (client_id, item_id) VALUES (?, ?)', (0, item_id))
+
+        # commit
         self.db.commit()
         print 'Created admin account %s' % admin_username
         print 'To grant admin access to other users, use the in game commands.'
