@@ -31,7 +31,7 @@ class GameServer:
         self.name_to_client = {}
 
         self.event_scheduler.schedule_event_recurring(self.ev_ping_all_clients, 5)
-        self.counter = 0
+
 
     def __call__(self):
         # create udp server thread
