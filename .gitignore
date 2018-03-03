@@ -3,3 +3,4 @@ stickonline.db
 bin/StickOnline.exe
 bin/Resources.sor
 bin/Readme.txt
+data/mob_spawn.default.json
