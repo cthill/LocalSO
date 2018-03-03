@@ -12,6 +12,7 @@ class SQLiteDB:
         self.log = logging.getLogger('db')
         self.db_file = db_file
         self.db_lock = Lock()
+        self.items_to_add = {}
 
         should_init_db = not os.path.isfile(self.db_file)
 
@@ -164,6 +165,12 @@ class SQLiteDB:
             WHERE id=?
             ''', save_values)
 
+            if self.items_to_add.get(client_id) is not None:
+                for item_id in self.items_to_add.get(client_id):
+                    if len(d['inventory']) < 20 and item_id >= 1 and item_id <= 72:
+                         d['inventory'].append(item_id)
+                del self.items_to_add[client_id]
+
             c.execute('DELETE FROM inventory WHERE client_id=?', (client_id,))
             for item_id in d['inventory']:
                 c.execute('INSERT INTO inventory (client_id, item_id) VALUES (?, ?)', (client_id, item_id))
@@ -179,11 +186,19 @@ class SQLiteDB:
             self.db.commit()
 
     def ban_unban_client(self, client_id, banned):
-        c = self.db.cursor()
-        c.execute('UPDATE clients SET banned=? WHERE id=?', (1 if banned else 0, client_id))
-        self.db.commit()
+        with self.db_lock:
+            c = self.db.cursor()
+            c.execute('UPDATE clients SET banned=? WHERE id=?', (1 if banned else 0, client_id))
+            self.db.commit()
 
     def set_admin_client(self, client_id, admin):
-        c = self.db.cursor()
-        c.execute('UPDATE clients SET admin_level=? WHERE id=?', (250 if admin else 0, client_id))
-        self.db.commit()
+        with self.db_lock:
+            c = self.db.cursor()
+            c.execute('UPDATE clients SET admin_level=? WHERE id=?', (250 if admin else 0, client_id))
+            self.db.commit()
+
+    def add_item_on_save(self, client_id, item_id):
+        with self.db_lock:
+            if self.items_to_add.get(client_id) is None:
+                self.items_to_add[client_id] = []
+            self.items_to_add[client_id].append(item_id)
