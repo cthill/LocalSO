@@ -106,7 +106,10 @@ class Client(Mailbox):
             self.log.error('Unhandled exception send_thread %s' % (e))
             traceback.print_exc()
         finally:
-            self.socket.shutdown(socket.SHUT_WR)
+            try:
+                self.socket.shutdown(socket.SHUT_WR)
+            except:
+                pass
             self._terminate()
 
     def _recv_thread(self):
@@ -132,7 +135,10 @@ class Client(Mailbox):
             self.log.error('Unhandled exception recv_thread %s' % (e))
             traceback.print_exc()
         finally:
-            self.socket.shutdown(socket.SHUT_RD)
+            try:
+                self.socket.shutdown(socket.SHUT_RD)
+            except:
+                pass
             self._terminate()
 
     def _terminate(self):
@@ -145,7 +151,10 @@ class Client(Mailbox):
 
     def disconnect(self):
         self.terminated = True
-        self.socket.shutdown(socket.SHUT_RDWR)
+        try:
+            self.socket.shutdown(socket.SHUT_RDWR)
+        except:
+            pass
 
     def _handle_packet(self, data):
         self.last_recv_timestamp = datetime.now()
