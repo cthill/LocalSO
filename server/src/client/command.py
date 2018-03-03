@@ -178,7 +178,7 @@ def bad_command(client, help_text=False):
         "  spawn <mob_id> [amount], spawnall [amount]",
         "  hurt, hurtall, kill, killall, godmode",
         "  kick <name>, ban <name>, unban <name>",
-        "  setadmin <name> <true|false>, item <id>"
+        "  setadmin <name> <true|false>, item <item_id>"
     ]
 
     for line in lines:
