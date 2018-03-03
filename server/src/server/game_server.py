@@ -61,7 +61,7 @@ class GameServer:
         self.log.info('udp listening %s:%s' % (interface, port))
 
         while not self.terminated:
-            raw_data, addr = s.recvfrom(1024) # read up to 1024 bytes
+            raw_data, addr = s.recvfrom(4096) # read up to 4096 bytes
             data = bytearray(raw_data)
             client_id = read_ushort(data, 1)
             if client_id in self.id_to_client:
@@ -140,9 +140,8 @@ class GameServer:
         now = datetime.now()
         for client in self.clients:
             if now - client.last_recv_timestamp > timedelta(seconds=config.PLAYER_TIMEOUT):
-                client.terminated = True
                 try:
-                    client.socket.close()
+                    client.disconnect()
                     self.log.info('Client %s timeout socket close' % client)
                 except:
                     pass

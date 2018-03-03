@@ -38,12 +38,23 @@ class AccountServer:
 
     def _account_server_client(self, conn, addr):
         try:
-            while True:
-                size = bytearray(conn.recv(2))
-                if not size:
+            input_buffer = bytearray()
+            while not self.terminated:
+                data = bytearray(conn.recv(4096))
+                if not data:
+                    self.log.info('peer disconnect')
                     break
-                size_int = read_short(size, 0)
-                self._handle_packet(conn, addr, size_int)
+                input_buffer += data
+
+                while len(input_buffer) >= 2:
+                    packet_size = read_ushort(input_buffer, 0)
+                    if len(input_buffer) - 2 < packet_size:
+                        break
+
+                    packet_data = input_buffer[2:packet_size+2]
+                    input_buffer = input_buffer[packet_size+2:]
+                    self._handle_packet(conn, addr, packet_data)
+
         except Exception as e:
             self.log.error('unhandled exception in client %s thread %s' % (self, e))
             traceback.print_exc()
@@ -51,9 +62,7 @@ class AccountServer:
             conn.close()
             self.log.info('client %s:%s disconnected' % addr)
 
-    def _handle_packet(self, conn, addr, size):
-        raw_data = conn.recv(size)
-        data = bytearray(raw_data)
+    def _handle_packet(self, conn, addr, data):
         enc_dec_buffer(data)
 
         self.log.debug('client %s:%s data: %s' % (addr[0], addr[1], buff_to_str(data)))
