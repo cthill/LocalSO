@@ -7,14 +7,14 @@
     "base_interval": 700,
     "random_interval": 140,
     "x_min": 6600,
-    "x_max": 11330,
-    "y": 2120
+    "x_max": 11300,
+    "y": 2105
   },
   {
     "mob_type": 1,
     "special_spawn_type": 12,
     "special_spawn_chance": 65,
-    "max_of_type": 2,
+    "max_of_type": 3,
     "base_interval": 1360,
     "random_interval": 400,
     "x_min": 14200,
@@ -28,9 +28,9 @@
     "max_of_type": 6,
     "base_interval": 1000,
     "random_interval": 200,
-    "x_min": 17085,
-    "x_max": 20000,
-    "y": 2120
+    "x_min": 17150,
+    "x_max": 19900,
+    "y": 2098
   },
   {
     "mob_type": 0,
@@ -52,7 +52,7 @@
     "random_interval": 225,
     "x_min": 25088,
     "x_max": 26624,
-    "y": 2000
+    "y": 2120
   },
   {
     "mob_type": 3,
@@ -63,7 +63,7 @@
     "random_interval": 225,
     "x_min": 28589,
     "x_max": 29357,
-    "y": 2000
+    "y": 2130
   },
 
   {
@@ -75,7 +75,7 @@
     "random_interval": 200,
     "x_min": 39660,
     "x_max": 41765,
-    "y": 2000
+    "y": 2110
   },
   {
     "mob_type": 7,
@@ -86,7 +86,7 @@
     "random_interval": 100,
     "x_min": 42832,
     "x_max": 44566,
-    "y": 2000
+    "y": 2130
   },
   {
     "mob_type": 7,
@@ -97,7 +97,7 @@
     "random_interval": 200,
     "x_min": 45604,
     "x_max": 47285,
-    "y": 2000
+    "y": 2130
   },
   {
     "mob_type": 9,
@@ -108,6 +108,6 @@
     "random_interval": 400,
     "x_min": 50750,
     "x_max": 58450,
-    "y": 2000
+    "y": 2140
   }
 ]
