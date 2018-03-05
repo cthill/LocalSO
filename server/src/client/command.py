@@ -45,39 +45,40 @@ def handle_admin_command(client, command):
         elif cmd == 'hurt':
             local_sections = client.world.get_local_sections(client.section)
             count = 0
-            for section in local_sections:
-                for mob in client.world.section_to_mobs[section]:
-                    mob.hp = 1
-                    count += 1
+            with client.world.section_to_mobs as section_to_mobs:
+                for section in local_sections:
+                    for mob in section_to_mobs[section]:
+                        mob.hp = 1
+                        count += 1
 
             send_chat_response(client, 'hurt %s mobs.' % count)
 
         elif cmd == 'hurtall':
             count = 0
-            for mob_id in client.world.mobs.keys():
-                mob = client.world.mobs[mob_id]
-                mob.hp = 1
-                count += 1
+            with client.world.mobs as mobs:
+                for mob_id in mobs:
+                    mobs[mob_id].hp = 1
+                    count += 1
 
             send_chat_response(client, 'hurt %s mobs.' % count)
 
         elif cmd == 'kill':
             local_sections = client.world.get_local_sections(client.section)
             count = 0
-            for section in local_sections:
-                for mob in client.world.section_to_mobs[section]:
-                    mob.hit(mob.hp + mob.defense, 0, 0)
-                    count += 1
+            with client.world.section_to_mobs as section_to_mobs:
+                for section in local_sections:
+                    for mob in section_to_mobs[section]:
+                        mob.hit(mob.hp + mob.defense, 0, 0)
+                        count += 1
 
             send_chat_response(client, 'killed %s mobs.' % count)
 
-
         elif cmd == 'killall':
             count = 0
-            for mob_id in client.world.mobs.keys():
-                mob = client.world.mobs[mob_id]
-                mob.hit(mob.hp + mob.defense, 0, 0)
-                count += 1
+            with client.world.mobs as mobs:
+                for mob_id in mobs:
+                    mobs[mob_id].hit(mob.hp + mob.defense, 0, 0)
+                    count += 1
 
             send_chat_response(client, 'killed %s mobs.' % count)
 
@@ -88,7 +89,10 @@ def handle_admin_command(client, command):
         elif cmd == 'kick':
             if len(tokens) == 2:
                 target_name = tokens[1]
-                target_client_obj = client.game_server.name_to_client.get(target_name.lower())
+                # we're just doing a single read so the lock is probably not strictly necessary
+                with client.game_server.name_to_client as name_to_client:
+                    target_client_obj = name_to_client.get(target_name.lower())
+
                 if target_client_obj is not None:
                     log.info('%s kicked %s.' % (client, target_client_obj))
                     send_public_chat(client, '%s was kicked.' % target_client_obj.name)
@@ -109,7 +113,10 @@ def handle_admin_command(client, command):
                     log.info('%s %sned %s.' % (client, cmd, target_client_db['name']))
                     send_public_chat(client, '%s was %sned.' % (target_client_db['name'], cmd))
 
-                    target_client_obj = client.game_server.name_to_client.get(target_name.lower())
+                    # we're just doing a single read so the lock is probably not strictly necessary
+                    with client.game_server.name_to_client as name_to_client:
+                        target_client_obj = name_to_client.get(target_name.lower())
+
                     if target_client_obj is not None:
                         target_client_obj.terminated = True
                 else:
@@ -130,7 +137,10 @@ def handle_admin_command(client, command):
                         log.info('%s set %s admin %s.' % (client, target_client_db['name'], admin_val))
                         send_chat_response(client, 'Set %s admin to %s.' % (target_name, admin_val))
 
-                        target_client_obj = client.game_server.name_to_client.get(target_name.lower())
+                        # we're just doing a single read so the lock is probably not strictly necessary
+                        with client.game_server.name_to_client as name_to_client:
+                            target_client_obj = name_to_client.get(target_name.lower())
+
                         if target_client_obj is not None:
                             target_client_obj.kick_with_reason('There has been a change to your admin status. You will now be disconnected.')
                     else:
@@ -213,6 +223,8 @@ def send_chat_response(client, chat_str):
     write_byte(buff, CHAT_RESPONSE_COLOR)
     client.send_tcp_message(buff)
 
+# Note: game_server.broadcast locks the game_server.clients list. Be careful not
+# to cause deadlocks when using this method
 def send_public_chat(client, chat_str):
     buff = [packet.MSG_CHAT]
     write_string(buff, chat_str)
@@ -222,5 +234,4 @@ def send_public_chat(client, chat_str):
 def spawn(client, mob):
     spawn_y = client.get_bbox().bottom() - mob['height'] * mob['scale']
     spawn_x = client.get_bbox().hcenter() + randint(0, 100) - 50
-    new_mob = Mob(client.world.generate_mob_id(), mob['id'], spawn_x, spawn_y, None, client.world)
-    client.world.send_mail_message(mail_header.MSG_ADD_MOB, new_mob)
+    client.world.send_mail_message(mail_header.MSG_ADD_MOB, (mob['id'], spawn_x, spawn_y, None))

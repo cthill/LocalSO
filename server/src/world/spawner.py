@@ -54,16 +54,17 @@ class MobSpawner:
             if randint(0, int(round(1000.0 / config.MOB_SPAWN_CHANCE_BOSS_MULTIPLIER))) == 0:
                 mob_type_to_spawn = 16 # sand fiend
 
-        new_mob_id = self.generate_mob_id()
+        new_mob_id = self._generate_mob_id()
         new_mob_x = self.spawner_data['x_min'] + randint(0, self.spawner_data['x_max'] - self.spawner_data['x_min'])
         new_mob_y = self.spawner_data['y'] - config.MOB_DATA[mob_type_to_spawn]['spawner_neg_y_offset']
         new_mob = Mob(new_mob_id, mob_type_to_spawn, new_mob_x, new_mob_y, self, self.world)
 
-        self.world.send_mail_message(mail_header.MSG_ADD_MOB, new_mob)
+        # we can call this method directly because the spawners are run on the world thread
+        self.world._add_mob(new_mob)
         self.mobs.add(new_mob)
         self.mob_id_counter += 1
 
-    def generate_mob_id(self):
+    def _generate_mob_id(self):
         new_mob_id = -1
         while True:
             new_mob_id = (self.mob_spawn_id << 10) | (self.mob_id_counter % 1024)
@@ -72,5 +73,5 @@ class MobSpawner:
                 break
         return new_mob_id
 
-    def mob_death(self, mob):
+    def _mob_death(self, mob):
         self.mobs.remove(mob)

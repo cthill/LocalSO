@@ -183,14 +183,15 @@ class Client(Mailbox):
             self.game_server.broadcast(buff, exclude=self)
 
             # tell self of all other players in area
-            for other_client in self.game_server.get_clients():
-                if other_client is self:
-                    continue
+            with self.game_server.clients as clients:
+                for other_client in clients:
+                    if other_client is self:
+                        continue
 
-                if dist(self.x, self.y, other_client.x, other_client.y) < config.PLAYER_STATUS_BROADCAST_RADIUS:
-                    buff = [packet.RESP_NEW_PLAYER]
-                    other_client.write_full_client_data(buff)
-                    self.send_tcp_message(buff)
+                    if dist(self.x, self.y, other_client.x, other_client.y) < config.PLAYER_STATUS_BROADCAST_RADIUS:
+                        buff = [packet.RESP_NEW_PLAYER]
+                        other_client.write_full_client_data(buff)
+                        self.send_tcp_message(buff)
 
         elif header == packet.MSG_PLAYER_DEATH:
             buff = [packet.RESP_PLAYER_DEATH]
@@ -199,9 +200,11 @@ class Client(Mailbox):
 
         elif header == packet.MSG_OTHER_PLAYER_NOT_FOUND:
             client_id = read_ushort(data, 2)
-            if client_id in self.game_server.id_to_client:
-                other_client = self.game_server.id_to_client[client_id]
+            # we're just doing a single read so the lock is probably not strictly necessary
+            with self.game_server.id_to_client as id_to_client:
+                other_client = id_to_client.get(client_id)
 
+            if other_client is not None:
                 if dist(self.x, self.y, other_client.x, other_client.y) < config.PLAYER_STATUS_BROADCAST_RADIUS:
                     buff = [packet.RESP_NEW_PLAYER]
                     other_client.write_full_client_data(buff)
@@ -209,8 +212,12 @@ class Client(Mailbox):
 
         elif header == packet.MSG_PVP_HIT_PLAYER:
             if not self.god_mode:
-                other_player_id = read_ushort(data, 2)
-                if other_player_id in self.game_server.id_to_client:
+                client_id = read_ushort(data, 2)
+                # we're just doing a single read so the lock is probably not strictly necessary
+                with self.game_server.id_to_client as id_to_client:
+                    other_player_exists = client_id in id_to_client
+
+                if other_player_exists:
                     buff = [packet.RESP_DMG_PLAYER]
                     buff.extend(data[2:])
                     self.game_server.broadcast(buff, exclude=self)
@@ -403,14 +410,14 @@ class Client(Mailbox):
                 elif self.x_speed > 0:
                     self.facing_right = True
 
-            # self.game_server.broadcast(data, exclude=self)
             # only broadcast to nearby players
-            for other_client in self.game_server.get_clients():
-                if other_client is self:
-                    continue
+            with self.game_server.clients as clients:
+                for other_client in clients:
+                    if other_client is self:
+                        continue
 
-                if dist(self.x, self.y, other_client.x, other_client.y) < config.PLAYER_STATUS_BROADCAST_RADIUS:
-                    other_client.send_tcp_message(data)
+                    if dist(self.x, self.y, other_client.x, other_client.y) < config.PLAYER_STATUS_BROADCAST_RADIUS:
+                        other_client.send_tcp_message(data)
 
         elif header == packet.MSG_UDP_PING:
             buff = [packet.RESP_PING]

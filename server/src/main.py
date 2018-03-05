@@ -49,8 +49,14 @@ class StickOnlineMaster:
     def stop(self):
         self.webserver.stop()
 
+
+        # calling client.disconnect() will lock the game_server client set.
+        # so we need to copy it
+        with self.game_server.clients as clients:
+            clients_online = clients[:]
+
         # dc all the clients from the game server
-        for client in self.game_server.clients:
+        for client in clients_online:
             try:
                 client.disconnect()
             except Exception as e:
