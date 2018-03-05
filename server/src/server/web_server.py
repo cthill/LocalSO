@@ -71,9 +71,10 @@ class WebServer(BaseHTTPRequestHandler):
         self._set_headers(200)
 
     def send_file(self, filename):
-        file_bytes = open(filename, 'rb').read()
-        self._set_headers(200, content_type='text/plain', content_length=len(file_bytes))
-        self.wfile.write(file_bytes)
+        with open(filename, 'rb') as f:
+            file_bytes = f.read()
+            self._set_headers(200, content_type='text/plain', content_length=len(file_bytes))
+            self.wfile.write(file_bytes)
 
 class StickOnlineHTTPServer:
     def __init__(self, interface, port, master):
