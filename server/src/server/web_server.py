@@ -27,7 +27,7 @@ class WebServer(BaseHTTPRequestHandler):
                 acc_svr = master_obj.get_account_server()
                 status = 'online'
                 players = game_svr.get_num_players()
-                if game_svr.terminated or acc_svr.terminated:
+                if game_svr.terminated or acc_svr.terminated or not game_svr.world.running:
                     players = 0
                     status = 'offline'
 
@@ -89,7 +89,7 @@ class StickOnlineHTTPServer:
         self.http_server = HTTPServer((self.interface, self.port), WebServer)
 
     def __call__(self):
-        log.info('http server listening on %s:%s' % (self.interface, self.port))
+        log.info('listening on %s:%s' % (self.interface, self.port))
         self.http_server.serve_forever()
 
     def stop(self):

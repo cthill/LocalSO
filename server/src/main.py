@@ -9,34 +9,31 @@ from db.db import SQLiteDB
 from server.web_server import StickOnlineHTTPServer
 from server.account_server import AccountServer
 from server.game_server import GameServer
+from util import LockDict
 
 class StickOnlineMaster:
     def __init__(self):
-        self.pending_game_server_connections = {}
+        self.pending_game_server_connections = LockDict()
         self.db = SQLiteDB(config.SQLITE_DB_FILE)
+        self.account_server = AccountServer(config.INTERFACE, config.PORT_ACCOUNT, self.db, self)
+        self.game_server = GameServer(config.INTERFACE, config.PORT_GAME, self)
+        self.webserver = StickOnlineHTTPServer(config.INTERFACE_HTTP, config.PORT_HTTP, self)
 
     def start(self):
-        self.webserver = StickOnlineHTTPServer(config.INTERFACE_HTTP, config.PORT_HTTP, self)
-        t = threading.Thread(target=self.webserver)
-        t.start()
-
-        self.account_server = AccountServer(config.INTERFACE, config.PORT_ACCOUNT, self.db, self)
-        t = threading.Thread(target=self.account_server)
-        t.start()
-
-        self.game_server = GameServer(config.INTERFACE, config.PORT_GAME, self)
-        t = threading.Thread(target=self.game_server)
-        t.start()
+        threading.Thread(target=self.webserver).start()
+        threading.Thread(target=self.account_server).start()
+        threading.Thread(target=self.game_server).start()
 
     def add_pending_game_server_connection(self, ip, data):
-        self.pending_game_server_connections[ip] = data
-        logging.info('added pending conn %s' % (ip))
+        with self.pending_game_server_connections:
+            self.pending_game_server_connections[ip] = data
 
     def get_pending_game_server_connection(self, ip):
-        if ip in self.pending_game_server_connections:
-            dat = self.pending_game_server_connections[ip]
-            del self.pending_game_server_connections[ip]
-            return dat
+        with self.pending_game_server_connections:
+            if ip in self.pending_game_server_connections:
+                dat = self.pending_game_server_connections[ip]
+                del self.pending_game_server_connections[ip]
+                return dat
 
         return None
 
@@ -76,7 +73,7 @@ class SigHandler:
 
     def handle_signal(self, signum, frame):
         self.caught_signal = True
-        
+
 
 if __name__ == '__main__':
     logging.basicConfig(format='%(message)s', level=logging.INFO)

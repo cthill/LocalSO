@@ -1,6 +1,7 @@
 import logging
 import math
 import time
+import traceback
 
 import config
 from mailbox import mail_header
@@ -30,6 +31,9 @@ class World(Mailbox):
     def __init__(self, game_server, event_scheduler):
         super(World, self).__init__()
 
+        self.log = logging.getLogger('world')
+
+        self.running = True
         self.game_server = game_server
         self.event_scheduler = event_scheduler
 
@@ -136,20 +140,27 @@ class World(Mailbox):
         return range(start, end)
 
     def __call__(self):
-        target_frame_interval = 1.0/config.ROOM_SPEED
-        while True:
-            step_start_timestamp = time.time()
-            self.world_step_tstamp = step_start_timestamp
+        try:
+            target_frame_interval = 1.0/config.ROOM_SPEED
+            while True:
+                step_start_timestamp = time.time()
+                self.world_step_tstamp = step_start_timestamp
 
-            with acquire_all(self.mobs, self.section_to_clients, self.section_to_mobs, self.active_sections, self.game_server.clients):
-                self._step()
+                with acquire_all(self.mobs, self.section_to_clients, self.section_to_mobs,
+                                 self.active_sections, self.game_server.clients):
+                    self._step()
 
-            # compute time to next frame
-            now = time.time()
-            time_to_wait = target_frame_interval - (now - step_start_timestamp)
-            if time_to_wait < 0:
-                time_to_wait = 0
-            time.sleep(time_to_wait)
+                # compute time to next frame
+                now = time.time()
+                time_to_wait = target_frame_interval - (now - step_start_timestamp)
+                if time_to_wait < 0:
+                    time_to_wait = 0
+                time.sleep(time_to_wait)
+        except Exception as e:
+            self.log.error('Unhandled exception in world %s' % (e))
+            traceback.print_exc()
+        finally:
+            self.running = False
 
     def _process_mail_messages(self):
         # check the mailbox

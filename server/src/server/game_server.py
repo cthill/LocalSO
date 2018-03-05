@@ -145,3 +145,6 @@ class GameServer:
                 # this packet is ignored by the client but will reset the client
                 # sideconnection timeout
                 client.send_tcp_message([packet.MSG_NOP])
+
+        # TODO: cleanup pending game server connections
+        # TODO: check if world thread is deadlocked
