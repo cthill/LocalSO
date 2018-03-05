@@ -181,7 +181,11 @@ class AccountServer:
             self._deny_request(conn, addr, 'Your password is invalid. Please try again.')
             return
 
-        if self.master.get_game_server().name_to_client.get(username.lower()) is not None:
+        # we're just doing a single read so the lock is probably not strictly necessary
+        with self.master.get_game_server().name_to_client as name_to_client:
+            account_in_use = name_to_client.get(username.lower()) is not None
+
+        if account_in_use:
             self._deny_request(conn, addr, 'The requested account is currently in use.')
             return
 

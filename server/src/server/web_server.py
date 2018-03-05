@@ -23,11 +23,11 @@ class WebServer(BaseHTTPRequestHandler):
             if self.path == '/status':
                 self._set_headers(200, content_type='application/json')
 
-                mgs = master_obj.get_game_server()
-                mas = master_obj.get_account_server()
+                game_svr = master_obj.get_game_server()
+                acc_svr = master_obj.get_account_server()
                 status = 'online'
-                players = len(mgs.clients)
-                if mgs.terminated or mas.terminated:
+                players = game_svr.get_num_players()
+                if game_svr.terminated or acc_svr.terminated:
                     players = 0
                     status = 'offline'
 
