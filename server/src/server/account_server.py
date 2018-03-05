@@ -55,7 +55,7 @@ class AccountServer:
                     self._handle_packet(conn, addr, packet_data)
 
         except Exception as e:
-            self.log.error('unhandled exception in client %s:%s thread %s' % (addr[0], addr[1], e))
+            self.log.error('Unhandled exception in client %s:%s thread %s' % (addr[0], addr[1], e))
             traceback.print_exc()
         finally:
             conn.close()
