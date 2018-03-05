@@ -42,7 +42,6 @@ class AccountServer:
             while not self.terminated:
                 data = bytearray(conn.recv(4096))
                 if not data:
-                    self.log.info('peer disconnect')
                     break
                 input_buffer += data
 
@@ -56,7 +55,7 @@ class AccountServer:
                     self._handle_packet(conn, addr, packet_data)
 
         except Exception as e:
-            self.log.error('unhandled exception in client %s thread %s' % (self, e))
+            self.log.error('unhandled exception in client %s:%s thread %s' % (addr[0], addr[1], e))
             traceback.print_exc()
         finally:
             conn.close()

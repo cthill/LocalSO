@@ -1,6 +1,7 @@
 import threading
 import logging
 import os.path
+import signal
 import time
 
 import config
@@ -10,7 +11,6 @@ from server.account_server import AccountServer
 from server.game_server import GameServer
 
 class StickOnlineMaster:
-
     def __init__(self):
         self.pending_game_server_connections = {}
         self.db = SQLiteDB(config.SQLITE_DB_FILE)
@@ -49,7 +49,6 @@ class StickOnlineMaster:
     def stop(self):
         self.webserver.stop()
 
-
         # calling client.disconnect() will lock the game_server client set.
         # so we need to copy it
         with self.game_server.clients as clients:
@@ -62,8 +61,22 @@ class StickOnlineMaster:
             except Exception as e:
                 logging.info('Failed to disconnect client %s: %s' % (client, e))
 
+        # sleep for 5 seconds so all the clients have time to save
+        time.sleep(5)
+
         self.game_server.terminated = True
         self.account_server.terminated = True
+
+
+class SigHandler:
+    def __init__(self):
+        self.caught_signal = False
+        signal.signal(signal.SIGINT, self.handle_signal)
+        signal.signal(signal.SIGTERM, self.handle_signal)
+
+    def handle_signal(self, signum, frame):
+        self.caught_signal = True
+        
 
 if __name__ == '__main__':
     logging.basicConfig(format='%(message)s', level=logging.INFO)
@@ -79,10 +92,16 @@ if __name__ == '__main__':
     m_stick_online_master.start()
 
     try:
+        handler = SigHandler()
         while True:
             time.sleep(1)
+            if handler.caught_signal:
+                logging.info('Shutting down...')
+                break
     except KeyboardInterrupt:
         logging.info('Shutting down...')
-        m_stick_online_master.stop()
-        time.sleep(5)
-        os._exit(0)
+    finally:
+        try:
+            m_stick_online_master.stop()
+        finally:
+            os._exit(0)

@@ -4,6 +4,7 @@ import signal
 import socket
 import sys
 import threading
+import traceback
 
 import config
 from client.client import Client
@@ -32,7 +33,7 @@ class GameServer:
         self.client_to_id = LockDict() # Done!
         self.name_to_client = LockDict() # Done!
 
-        self.event_scheduler.schedule_event_recurring(self.ev_ping_all_clients, 5)
+        self.event_scheduler.schedule_event_recurring(self.ev_ping_clients, 5)
 
     def __call__(self):
         # create udp server thread
@@ -53,7 +54,12 @@ class GameServer:
         while not self.terminated:
             conn, addr = s.accept()
             self.log.info('new connection: %s:%s' % (addr))
-            self._client_accept(conn, addr)
+
+            try:
+                self._client_accept(conn, addr)
+            except Exception as e:
+                self.log.error('Unhandled exception _client_accept %s' % (e))
+                traceback.print_exc()
 
     def udp_server(self, interface, port):
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -64,26 +70,24 @@ class GameServer:
         while not self.terminated:
             raw_data, addr = s.recvfrom(4096) # read up to 4096 bytes
             data = bytearray(raw_data)
-            client_id = read_ushort(data, 1)
-
-            # we're just doing a single read so the lock is probably not strictly necessary
-            with self.id_to_client:
-                client = self.id_to_client.get(client_id)
-
-            if client is not None:
-                client.handle_udp_packet(data)
-
             self.log.debug('udp message: %s' % buff_to_str(data))
 
-    def _client_accept(self, conn, addr):
-        client_dat = self.master.get_pending_game_server_connection(addr[0])
-        if client_dat is None:
-            conn.close()
-            return
+            client_id = read_ushort(data, 1)
+            try:
+                # we're just doing a single read so the lock is probably not strictly necessary
+                with self.id_to_client:
+                    client = self.id_to_client.get(client_id)
 
+                if client is not None:
+                    client.handle_udp_packet(data)
+            except Exception as e:
+                self.log.error('Unhandled exception udp_server %s' % (e))
+                traceback.print_exc()
+
+    def _client_accept(self, conn, addr):
         # enable TCP_NODELAY
         conn.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, True)
-
+        client_dat = self.master.get_pending_game_server_connection(addr[0])
         with acquire_all(self.clients, self.id_to_client, self.client_to_id, self.name_to_client):
             client_id = client_dat['id']
             new_client = Client(self, self.world, conn, client_id, client_dat)
@@ -121,19 +125,15 @@ class GameServer:
 
             client.send_tcp_message(data)
 
-    def ev_ping_all_clients(self):
-        buff = [packet.MSG_NOP] # this packet is ignored by the client (but will reset the connection timeout)
-        self.broadcast(buff)
-
-        # check client timeouts
-        now = datetime.now()
-
+    def ev_ping_clients(self):
         # copy the clients list so that we don't deadlock when calling client.disconnect()
         connected = []
         with self.clients:
             connected = self.clients[:]
 
+        now = datetime.now()
         for client in connected:
+            # check server side client timeouts
             if now - client.last_recv_timestamp > timedelta(seconds=config.PLAYER_TIMEOUT):
                 try:
                     client.disconnect()
@@ -141,3 +141,7 @@ class GameServer:
                 except:
                     pass
                 self.log.info('Client %s timed out.' % client)
+            else:
+                # this packet is ignored by the client but will reset the client
+                # sideconnection timeout
+                client.send_tcp_message([packet.MSG_NOP])
