@@ -15,5 +15,6 @@
     "register_closed": false,
     "sqlite_db_file": "data/stickonline.db",
     "sqlite_db_init_file": "data/init.sql",
-    "game_bin_dir": "bin"
+    "game_bin_dir": "bin",
+    "data_dir": "data"
 }

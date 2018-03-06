@@ -45,8 +45,6 @@ class Mob():
         self.yspeed = 0
         self.xspeed_knockback = 0
 
-
-
         self.hp = self.mob_dat['hp']
         self.defense = self.mob_dat['defense']
         self.dead = False
@@ -162,7 +160,9 @@ class Mob():
         else:
             if self.sprite_index != SPRITE_INDEX_ATTACK:
                 self.set_reset_timer('walk')
-                client_aggrov = self.world.find_player_nearest(self.get_bbox().hcenter(), section_radius=self.walk_section_search_radius)
+                # mobs are run on the world thread, so we can call
+                # world._find_player_nearest without issue
+                client_aggrov = self.world._find_player_nearest(self.get_bbox().hcenter(), section_radius=self.walk_section_search_radius)
                 if client_aggrov is not None and dist(self.x, self.y, client_aggrov.x, client_aggrov.y) <= self.follow_radius_2x:
                     self.client_aggrov = client_aggrov
                     if self.client_aggrov.get_bbox().hcenter() <= self.get_bbox().hcenter():
@@ -176,7 +176,7 @@ class Mob():
                 else:
                     self._set_sprite(SPRITE_INDEX_STAND)
                     # the original game didn't do this, but I find it makes the mobs feel much more lively
-                    # self.timers['walk'] /= 4
+                    # self.timers['walk'] /= 2
             else:
                 self.timers['walk'] = 1
 
@@ -205,8 +205,9 @@ class Mob():
             if ground_below and self.xspeed_knockback == 0:
                 facing_right = self.direction == 1
                 x_search = self.get_bbox().right() if facing_right else self.get_bbox().left()
-
-                client_nearest = self.world.find_player_nearest(x_search, section_radius=self.atk_search_radius)
+                # mobs are run on the world thread, so we can call
+                # world._find_player_nearest without issue
+                client_nearest = self.world._find_player_nearest(x_search, section_radius=self.atk_search_radius)
                 if client_nearest is not None and dist(self.x, self.y, client_nearest.x, client_nearest.y) < self.follow_radius / 2.0:
                     ca_bbox = client_nearest.get_bbox()
                     if facing_right:
@@ -259,7 +260,9 @@ class Mob():
 
                     clients_to_test = []
                     for section in sections_to_search:
-                        clients_to_test.extend(self.world.get_clients_in_section(section))
+                        # mobs are run on the world thread, so we can access
+                        # world.section_to_clients without issue
+                        clients_to_test.extend(self.world.section_to_clients[section])
 
                     for client in clients_to_test:
                         if client not in self.players_hit and self.dmg_bbox.check_collision(client.get_bbox()):
@@ -280,7 +283,9 @@ class Mob():
             write_ushort(buff, config.HIT_SOUND_ID)
             write_short(buff, self.mob_dat['knockback_x'] * self.direction * 10)
             write_short(buff, self.mob_dat['knockback_y'] * 10)
-            self.world.game_server.broadcast_local(buff, self.section)
+            # mobs are run on the world thread, so we can call _broadcast_local
+            # without issue
+            self.world._broadcast_local(buff, self.section)
 
     def _move_xspeed_check_side_collide(self, side_collide):
         if not side_collide:
