@@ -1,15 +1,17 @@
 import logging
 import math
 import time
+import traceback
 
 import config
 from mailbox import mail_header
 from net import packet
 from bounding_box import BoundingBox
 from mailbox import Mailbox
+from mob import Mob
 from spawner import MobSpawner
 from net.buffer import *
-from util import ceildiv
+from util import ceildiv, LockDict, LockSet, acquire_all
 
 class WorldSection:
     def __init__(self, index):
@@ -29,20 +31,30 @@ class World(Mailbox):
     def __init__(self, game_server, event_scheduler):
         super(World, self).__init__()
 
+        self.log = logging.getLogger('world')
+
+        self.running = True
         self.game_server = game_server
         self.event_scheduler = event_scheduler
+
+        # read only data that does not need locks
         self.solid_blocks = []
         self.jump_through_blocks = []
         self.sections = []
         self.mob_spawn = []
-        self.mobs = {}
-        self.section_to_clients = {}
-        self.section_to_mobs = {}
-        self.active_sections = set()
+
+        # mutable data that needs locks
+        self.mobs = LockDict() # Done!
+        self.section_to_clients = LockDict() # Done!
+        self.section_to_mobs = LockDict() # Done!
+        self.active_sections = LockSet() # Done!
+
         self.mob_id_gen_counter = 0
         self.world_step_num = 0
+        self.world_step_tstamp = time.time()
 
-        # create sections. This makes collision detection faster because we only have to check for collision within the section (and adjacent sections)
+        # create sections. This makes collision detection faster because we only
+        # have to check for collision within the section (and adjacent sections)
         for i in range(ceildiv(config.WORLD_WIDTH, config.WORLD_SECTION_WIDTH)):
             sec = WorldSection(i)
             self.sections.append(sec)
@@ -99,9 +111,8 @@ class World(Mailbox):
         section_span = ceildiv((bbox.x % config.WORLD_SECTION_WIDTH) + bbox.w, config.WORLD_SECTION_WIDTH)
         return (origin_section, origin_section + section_span)
 
-    def get_clients_in_section(self, section):
-        return self.section_to_clients[section]
-
+    # This method modifies the section_to_clients dict and the active_sections
+    # set and should not be called without first locking the dict and set.
     def _update_client_section(self, client, old_section, new_section):
         if old_section in self.section_to_clients:
             self.section_to_clients[old_section].remove(client)
@@ -112,15 +123,14 @@ class World(Mailbox):
             self.section_to_clients[new_section].add(client)
             self.active_sections.add(new_section)
 
+    # This method modifies the section_to_mobs dict and should not be called
+    # without first locking the dict and set.
     def _update_mob_section(self, mob, old_section, new_section):
         if old_section in self.section_to_mobs:
             self.section_to_mobs[old_section].remove(mob)
 
         if new_section in self.section_to_mobs:
             self.section_to_mobs[new_section].add(mob)
-
-    def get_active_sections(self):
-        return self.active_sections
 
     def get_local_sections(self, section, section_radius=3):
         if section_radius < 0:
@@ -130,18 +140,27 @@ class World(Mailbox):
         return range(start, end)
 
     def __call__(self):
-        target_frame_interval = 1.0/config.ROOM_SPEED
-        while True:
-            step_start_timestamp = time.time()
+        try:
+            target_frame_interval = 1.0/config.ROOM_SPEED
+            while True:
+                step_start_timestamp = time.time()
+                self.world_step_tstamp = step_start_timestamp
 
-            self._step()
+                with acquire_all(self.mobs, self.section_to_clients, self.section_to_mobs,
+                                 self.active_sections, self.game_server.clients):
+                    self._step()
 
-            # compute time to next frame
-            now = time.time()
-            time_to_wait = target_frame_interval - (now - step_start_timestamp)
-            if time_to_wait < 0:
-                time_to_wait = 0
-            time.sleep(time_to_wait)
+                # compute time to next frame
+                now = time.time()
+                time_to_wait = target_frame_interval - (now - step_start_timestamp)
+                if time_to_wait < 0:
+                    time_to_wait = 0
+                time.sleep(time_to_wait)
+        except Exception as e:
+            self.log.error('Unhandled exception in world %s' % (e))
+            traceback.print_exc()
+        finally:
+            self.running = False
 
     def _process_mail_messages(self):
         # check the mailbox
@@ -154,9 +173,10 @@ class World(Mailbox):
                 mob_id = payload[0]
                 if mob_id in self.mobs:
                     self.mobs[mob_id].hit(*payload[1:])
+
             elif header == mail_header.MSG_ADD_MOB:
-                mob = payload
-                self.mobs[mob.id] = mob
+                mob_id = self._generate_mob_id()
+                self._add_mob(Mob(mob_id, payload[0], payload[1], payload[2], payload[3], self))
 
             elif header == mail_header.MSG_DELETE_MOB:
                 self._remove_mob(payload)
@@ -168,7 +188,6 @@ class World(Mailbox):
                 self._update_client_section(*payload)
 
     def _step(self):
-
         self._process_mail_messages()
 
         # run the spawners
@@ -189,7 +208,8 @@ class World(Mailbox):
                 if mob.broadcast_death:
                     buff = [packet.RESP_MOB_DEATH]
                     write_uint(buff, mob.id)
-                    self.game_server.broadcast_local(buff, mob.section)
+                    self._broadcast_local(buff, mob.section)
+
             elif mob.section in active_sections_expanded:
                 # mob.step() is an expensive call, so we only want to do it in the active world sections (where the players are)
                 mob.step()
@@ -199,7 +219,7 @@ class World(Mailbox):
             self._remove_mob(mob)
 
         # broadcast mob updates
-        # first find each client
+        # first find each clien
         for client in self.game_server.clients:
             # then get the client's nearby sections
             local_sections = self.get_local_sections(client.section)
@@ -249,10 +269,11 @@ class World(Mailbox):
 
         return touching
 
-    def find_player_nearest(self, x, section_radius=3):
+    def _find_player_nearest(self, x, section_radius=3):
         section = self.find_section_index(x)
         sections_to_search = self.get_local_sections(section, section_radius=section_radius)
         players_found = []
+
         for section in sections_to_search:
             players_found.extend(self.section_to_clients[section])
 
@@ -265,19 +286,38 @@ class World(Mailbox):
 
         return nearest
 
-    def generate_mob_id(self):
+    def _generate_mob_id(self):
         new_id = (0b111111 << 10) | (self.mob_id_gen_counter % 1024)
         self.mob_id_gen_counter += 1
         return new_id
 
+    # This method modifies the mobs dict and should not be called without first
+    # locking the dict.
+    def _add_mob(self, mob):
+        self.mobs[mob.id] = mob
+
+    # This method modifies the mobs and section_to_mobs dicts and should not be
+    # called without first locking the dicts.
     def _remove_mob(self, mob):
         if mob.id in self.mobs:
             del self.mobs[mob.id]
         if mob.section in self.section_to_mobs:
             self.section_to_mobs[mob.section].remove(mob)
         if mob.spawner is not None:
-            mob.spawner.mob_death(mob)
+            # we can call this method directly because spawners are run on the world thread
+            mob.spawner._mob_death(mob)
+
+    def _broadcast_local(self, data, section, exclude=None):
+        for i in self.get_local_sections(section):
+            section_clients = self.section_to_clients[i]
+            for client in section_clients:
+                if client is exclude:
+                    continue
+
+                client.send_tcp_message(data)
 
     def client_disconnect(self, client):
-        if client.section in self.section_to_clients:
-            self.section_to_clients[client.section].remove(client)
+        # lock the dict
+        with self.section_to_clients:
+            if client.section in self.section_to_clients:
+                self.section_to_clients[client.section].remove(client)

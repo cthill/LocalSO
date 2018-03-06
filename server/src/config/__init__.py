@@ -6,7 +6,8 @@ logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                     datefmt='%d-%m-%y %H:%M:%S')
 
-config_json = json.loads(open('config.json').read())
+with open('config.json') as f:
+    config_json = json.loads(f.read())
 
 INTERFACE = config_json['interface']
 INTERFACE_HTTP = config_json['interface_http']
@@ -33,8 +34,35 @@ REGISTER_CLOSED = config_json['register_closed']
 SQLITE_DB_FILE = config_json['sqlite_db_file']
 SQLITE_DB_INIT_FILE = config_json['sqlite_db_init_file']
 
-# game binary files directory
+# dirs
 GAME_BIN_DIR = config_json['game_bin_dir']
+DATA_DIR = config_json['data_dir']
+
+# load block data json
+SOLID_BLOCK_DATA = []
+JUMP_THROUGH_BLOCK_DATA = []
+with open(DATA_DIR + '/world.json') as f:
+    block_data = json.loads(f.read())
+    SOLID_BLOCK_DATA += block_data['block_type_1']
+    SOLID_BLOCK_DATA += block_data['block_type_2']
+    JUMP_THROUGH_BLOCK_DATA += block_data['block_type_3']
+
+# load mob json
+MOB_DATA = []
+with open(DATA_DIR + '/mob.json') as f:
+    MOB_DATA += json.loads(f.read())
+
+# load mob_spawn json
+MOB_SPAWN = []
+with open(DATA_DIR + '/mob_spawn.json') as f:
+    MOB_SPAWN += json.loads(f.read())
+
+# load item data
+ITEM_DATA = {}
+with open(DATA_DIR + '/item.json') as f:
+    for item in json.loads(f.read()):
+        ITEM_DATA[item['id']] = item
+
 
 # Do not change these parameters, modifying them may cause bugs or performance issues
 COMPATIBLE_GAME_VERSION = 439.0
@@ -55,34 +83,3 @@ PLAYER_STATUS_BROADCAST_RADIUS = 1430
 PLAYER_TIMEOUT = 10 # in seconds
 WORLD_GRAVITY = 1
 WORLD_TERMINAL_VELOCITY = 14
-
-
-SOLID_BLOCK_DATA = []
-JUMP_THROUGH_BLOCK_DATA = []
-MOB_DATA = []
-MOB_SPAWN = []
-ITEM_DATA = {}
-
-DATA_DIR = 'data/'
-# load world data json
-block_data_json = open(DATA_DIR + 'world.json').read()
-block_data = json.loads(block_data_json)
-# add solid blocks
-SOLID_BLOCK_DATA += block_data['block_type_1']
-SOLID_BLOCK_DATA += block_data['block_type_2']
-JUMP_THROUGH_BLOCK_DATA += block_data['block_type_3']
-
-# load mob json
-mob_data_json = open(DATA_DIR + 'mob.json').read()
-mob_data = json.loads(mob_data_json)
-MOB_DATA += mob_data
-
-# load mob_spawn json
-mob_spawn_json = open(DATA_DIR + 'mob_spawn.json').read()
-mob_spawn = json.loads(mob_spawn_json)
-MOB_SPAWN += mob_spawn
-
-# load item data
-item_json = open(DATA_DIR + 'item.json').read()
-for item in json.loads(item_json):
-    ITEM_DATA[item['id']] = item

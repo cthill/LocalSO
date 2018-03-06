@@ -38,22 +38,30 @@ class AccountServer:
 
     def _account_server_client(self, conn, addr):
         try:
-            while True:
-                size = bytearray(conn.recv(2))
-                if not size:
+            input_buffer = bytearray()
+            while not self.terminated:
+                data = bytearray(conn.recv(4096))
+                if not data:
                     break
-                size_int = read_short(size, 0)
-                self._handle_packet(conn, addr, size_int)
+                input_buffer += data
+
+                while len(input_buffer) >= 2:
+                    packet_size = read_ushort(input_buffer, 0)
+                    if len(input_buffer) - 2 < packet_size:
+                        break
+
+                    packet_data = input_buffer[2:packet_size+2]
+                    input_buffer = input_buffer[packet_size+2:]
+                    self._handle_packet(conn, addr, packet_data)
+
         except Exception as e:
-            self.log.error('unhandled exception in client %s thread %s' % (self, e))
+            self.log.error('Unhandled exception in client %s:%s thread %s' % (addr[0], addr[1], e))
             traceback.print_exc()
         finally:
             conn.close()
             self.log.info('client %s:%s disconnected' % addr)
 
-    def _handle_packet(self, conn, addr, size):
-        raw_data = conn.recv(size)
-        data = bytearray(raw_data)
+    def _handle_packet(self, conn, addr, data):
         enc_dec_buffer(data)
 
         self.log.debug('client %s:%s data: %s' % (addr[0], addr[1], buff_to_str(data)))
@@ -172,7 +180,11 @@ class AccountServer:
             self._deny_request(conn, addr, 'Your password is invalid. Please try again.')
             return
 
-        if self.master.get_game_server().name_to_client.get(username.lower()) is not None:
+        # we're just doing a single read so the lock is probably not strictly necessary
+        with self.master.get_game_server().name_to_client as name_to_client:
+            account_in_use = name_to_client.get(username.lower()) is not None
+
+        if account_in_use:
             self._deny_request(conn, addr, 'The requested account is currently in use.')
             return
 

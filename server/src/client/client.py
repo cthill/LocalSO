@@ -1,6 +1,7 @@
 import logging
 import threading
 from datetime import datetime
+import socket
 import traceback
 
 import command
@@ -106,24 +107,42 @@ class Client(Mailbox):
                 self.log.error('Unhandled exception send_thread %s' % (e))
                 traceback.print_exc()
         finally:
-            self._terminate()
+            try:
+                self.socket.shutdown(socket.SHUT_WR)
+            except:
+                pass
+            self._cleanup()
 
     def _recv_thread(self):
         try:
+            input_buffer = bytearray()
             while not self.terminated:
-                size = bytearray(self.socket.recv(2))
-                if not size:
+                data = bytearray(self.socket.recv(4096))
+                if not data:
                     break
-                size_int = read_short(size, 0)
-                self._handle_packet(size_int)
+                input_buffer += data
+
+                while len(input_buffer) >= 2:
+                    packet_size = read_ushort(input_buffer, 0)
+                    if len(input_buffer) - 2 < packet_size:
+                        break
+
+                    packet_data = input_buffer[2:packet_size+2]
+                    input_buffer = input_buffer[packet_size+2:]
+                    self._handle_packet(packet_data)
+
         except Exception as e:
             if not self.terminated:
                 self.log.error('Unhandled exception recv_thread %s' % (e))
                 traceback.print_exc()
         finally:
-            self._terminate()
+            try:
+                self.socket.shutdown(socket.SHUT_RD)
+            except:
+                pass
+            self._cleanup()
 
-    def _terminate(self):
+    def _cleanup(self):
         if not self.disconnect_handled:
             self.disconnect_handled = True
             self.world.client_disconnect(self)
@@ -132,15 +151,14 @@ class Client(Mailbox):
             self.log.info('disconnected')
 
     def disconnect(self):
-        tcp_write(self.socket, [])
         self.terminated = True
+        try:
+            self.socket.shutdown(socket.SHUT_RDWR)
+        except:
+            pass
 
-    def _handle_packet(self, size):
+    def _handle_packet(self, data):
         self.last_recv_timestamp = datetime.now()
-
-        raw_data = self.socket.recv(size)
-        data = bytearray(raw_data)
-
         self.log.debug('data: %s' % (buff_to_str(data)))
 
         header = data[0]
@@ -166,14 +184,15 @@ class Client(Mailbox):
             self.game_server.broadcast(buff, exclude=self)
 
             # tell self of all other players in area
-            for other_client in self.game_server.get_clients():
-                if other_client is self:
-                    continue
+            with self.game_server.clients as clients:
+                for other_client in clients:
+                    if other_client is self:
+                        continue
 
-                if dist(self.x, self.y, other_client.x, other_client.y) < config.PLAYER_STATUS_BROADCAST_RADIUS:
-                    buff = [packet.RESP_NEW_PLAYER]
-                    other_client.write_full_client_data(buff)
-                    self.send_tcp_message(buff)
+                    if dist(self.x, self.y, other_client.x, other_client.y) < config.PLAYER_STATUS_BROADCAST_RADIUS:
+                        buff = [packet.RESP_NEW_PLAYER]
+                        other_client.write_full_client_data(buff)
+                        self.send_tcp_message(buff)
 
         elif header == packet.MSG_PLAYER_DEATH:
             buff = [packet.RESP_PLAYER_DEATH]
@@ -182,9 +201,11 @@ class Client(Mailbox):
 
         elif header == packet.MSG_OTHER_PLAYER_NOT_FOUND:
             client_id = read_ushort(data, 2)
-            if client_id in self.game_server.id_to_client:
-                other_client = self.game_server.id_to_client[client_id]
+            # we're just doing a single read so the lock is probably not strictly necessary
+            with self.game_server.id_to_client as id_to_client:
+                other_client = id_to_client.get(client_id)
 
+            if other_client is not None:
                 if dist(self.x, self.y, other_client.x, other_client.y) < config.PLAYER_STATUS_BROADCAST_RADIUS:
                     buff = [packet.RESP_NEW_PLAYER]
                     other_client.write_full_client_data(buff)
@@ -192,8 +213,12 @@ class Client(Mailbox):
 
         elif header == packet.MSG_PVP_HIT_PLAYER:
             if not self.god_mode:
-                other_player_id = read_ushort(data, 2)
-                if other_player_id in self.game_server.id_to_client:
+                client_id = read_ushort(data, 2)
+                # we're just doing a single read so the lock is probably not strictly necessary
+                with self.game_server.id_to_client as id_to_client:
+                    other_player_exists = client_id in id_to_client
+
+                if other_player_exists:
                     buff = [packet.RESP_DMG_PLAYER]
                     buff.extend(data[2:])
                     self.game_server.broadcast(buff, exclude=self)
@@ -361,47 +386,48 @@ class Client(Mailbox):
         write_string(buff, reason)
         write_byte(buff, 1)
         self.send_tcp_message(buff)
-
-        def dc_me():
-            self.terminated = True
-            self.socket.close()
-        self.world.event_scheduler.schedule_event(dc_me, 5)
+        self.world.event_scheduler.schedule_event(self.disconnect, 5)
 
     def handle_udp_packet(self, data):
         self.last_recv_timestamp = datetime.now()
 
-        header = data[0]
-        if header == packet.MSG_UDP_PLAYER_POS_CHANGE or header == packet.MSG_UDP_PLAYER_SPRITE_CHANGE:
-            # client_id = read_uint(data, 1)
-            new_x = read_int(data, 3) / 10.0
-            new_y = read_short(data, 7) / 10.0
-            self.update_position(new_x, new_y)
-            self.x_speed = read_short(data, 9) / 10.0
-            self.y_speed = read_short(data, 11) / 10.0
+        try:
+            header = data[0]
+            if header == packet.MSG_UDP_PLAYER_POS_CHANGE or header == packet.MSG_UDP_PLAYER_SPRITE_CHANGE:
+                # client_id = read_uint(data, 1)
+                new_x = read_int(data, 3) / 10.0
+                new_y = read_short(data, 7) / 10.0
+                self.update_position(new_x, new_y)
+                self.x_speed = read_short(data, 9) / 10.0
+                self.y_speed = read_short(data, 11) / 10.0
 
-            if header == packet.MSG_UDP_PLAYER_SPRITE_CHANGE:
-                self.sprite_index = read_short(data, 13)
-                self.image_index = read_short(data, 15) / 100.0
-                self.animation_speed = read_short(data, 17) / 100.0
-                self.facing_right = read_byte(data, 19) > 0
-            else:
-                if self.x_speed < 0:
-                    self.facing_right = False
-                elif self.x_speed > 0:
-                    self.facing_right = True
+                if header == packet.MSG_UDP_PLAYER_SPRITE_CHANGE:
+                    self.sprite_index = read_short(data, 13)
+                    self.image_index = read_short(data, 15) / 100.0
+                    self.animation_speed = read_short(data, 17) / 100.0
+                    self.facing_right = read_byte(data, 19) > 0
+                else:
+                    if self.x_speed < 0:
+                        self.facing_right = False
+                    elif self.x_speed > 0:
+                        self.facing_right = True
 
-            # self.game_server.broadcast(data, exclude=self)
-            # only broadcast to nearby players
-            for other_client in self.game_server.get_clients():
-                if other_client is self:
-                    continue
+                # only broadcast to nearby players
+                with self.game_server.clients as clients:
+                    for other_client in clients:
+                        if other_client is self:
+                            continue
 
-                if dist(self.x, self.y, other_client.x, other_client.y) < config.PLAYER_STATUS_BROADCAST_RADIUS:
-                    other_client.send_tcp_message(data)
+                        if dist(self.x, self.y, other_client.x, other_client.y) < config.PLAYER_STATUS_BROADCAST_RADIUS:
+                            other_client.send_tcp_message(data)
 
-        elif header == packet.MSG_UDP_PING:
-            buff = [packet.RESP_PING]
-            self.send_tcp_message(buff)
+            elif header == packet.MSG_UDP_PING:
+                buff = [packet.RESP_PING]
+                self.send_tcp_message(buff)
+
+        except Exception as e:
+            self.log.error('Unhandled exception handle_udp %s' % (e))
+            traceback.print_exc()
 
     def __str__(self):
         return '(%s, %s)' % (self.id, self.name)

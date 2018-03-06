@@ -30,7 +30,10 @@ class SQLiteDB:
     def _init_db(self):
         self.log.info('Performing first time setup.')
         self.log.info('Creating database tables...')
-        init_statements = open(config.SQLITE_DB_INIT_FILE).read()
+
+        with open(config.SQLITE_DB_INIT_FILE) as f:
+            init_statements = f.read()
+
         c = self.db.cursor()
         c.executescript(init_statements)
         self.db.commit()
@@ -58,7 +61,7 @@ class SQLiteDB:
             int_unknown_4, int_unknown_5, gold, clan
         )
         VALUES
-        (?, ?, ?, ?, ?, null, null, 0, 1080, 300, 739, 1200, 128, 128, 128, 128, 128, 255, 0.0, 250, 0, 0, 0, 0, 0, 0, 0, 9999999, '')
+        (?, ?, ?, ?, ?, null, null, 0, 1080, 300, 739, 1200, 128, 128, 128, 128, 128, 255, 0.0, 250, 0, 0, 10, 17, 0, 0, 0, 9999999, '')
         ''', (0, admin_username.lower(), admin_passhash, now, now))
 
         # add items
