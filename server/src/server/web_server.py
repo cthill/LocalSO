@@ -37,7 +37,7 @@ class WebServer(BaseHTTPRequestHandler):
                 }))
 
             elif self.path == '/download/v2/Announcements.txt':
-                self._set_headers(200)
+                self._set_headers(200, content_length=len(config.MENU_MOTD))
                 self.wfile.write(config.MENU_MOTD)
 
             elif self.path == '/download/v2/UpdateList.sul':
@@ -53,10 +53,6 @@ class WebServer(BaseHTTPRequestHandler):
 
             elif self.path == '/download/v2/Readme.txt':
                 self.send_file(config.GAME_BIN_DIR + '/Readme.txt')
-
-            elif self.path.startswith('/boards/index.php?action=keepalive'):
-                self._set_headers(200, content_type='image/gif')
-                self.wfile.write(base64.b64decode('R0lGODlhAQABAIAAAAAAAAAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw=='))
 
             else:
                 self._set_headers(404, content_type='text/html')
