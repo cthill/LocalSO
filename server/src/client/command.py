@@ -77,7 +77,8 @@ def handle_admin_command(client, command):
             count = 0
             with client.world.mobs as mobs:
                 for mob_id in mobs:
-                    mobs[mob_id].hit(mob.hp + mob.defense, 0, 0)
+                    mob = mobs[mob_id]
+                    mob.hit(mob.hp + mob.defense, 0, 0)
                     count += 1
 
             send_chat_response(client, 'killed %s mobs.' % count)
