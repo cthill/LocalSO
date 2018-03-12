@@ -34,6 +34,7 @@ To connect with an unmodified client, you must add two entries to your hosts fil
 ```
 127.0.0.1	stickonline.redirectme.net
 127.0.0.1	www.stick-online.com
+127.0.0.1	stick-online.com
 ```
 Start the client and it should connect to the server.
 

@@ -56,7 +56,7 @@ class WebServer(BaseHTTPRequestHandler):
 
             else:
                 self._set_headers(404, content_type='text/html')
-                self.wfile.write('Not found.')
+                self.wfile.write('Error: not found. If you are trying to connect to www.stick-online.com, please edit your hosts file and try again.')
                 log.info('Unknown http path: %s' % self.path)
         except Exception as e:
             log.error('Error handling http request %s' % e)
