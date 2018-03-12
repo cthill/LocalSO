@@ -5,12 +5,12 @@ The purpose of this project is to preserve Stick Online for all of its past play
 
 ## Quick Start
 Requirements:
- * Python 2.7
+ * Python 2.7.4
 
 On Windows, run `start_server.cmd` and complete the first time setup:
 
 ```
-02-03-18 16:24:24 root         INFO     LocalSO v1.0
+02-03-18 16:24:24 root         INFO     LocalSO v1.1
 02-03-18 16:24:24 db           INFO     Connected to database data/stickonline.db
 02-03-18 16:24:24 db           INFO     Performing first time setup.
 02-03-18 16:24:24 db           INFO     Creating database tables...
