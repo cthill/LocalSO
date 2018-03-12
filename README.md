@@ -5,12 +5,13 @@ The purpose of this project is to preserve Stick Online for all of its past play
 
 ## Quick Start
 Requirements:
- * Python 2.7.4
+ * Python 2.7.4 or later (2.7.14 recommended).
+ * [The latest LocalSO release.](https://github.com/cthill/LocalSO/releases)
 
 On Windows, run `start_server.cmd` and complete the first time setup:
 
 ```
-02-03-18 16:24:24 root         INFO     LocalSO v1.1
+02-03-18 16:24:24 root         INFO     LocalSO v1.2
 02-03-18 16:24:24 db           INFO     Connected to database data/stickonline.db
 02-03-18 16:24:24 db           INFO     Performing first time setup.
 02-03-18 16:24:24 db           INFO     Creating database tables...
@@ -34,6 +35,7 @@ To connect with an unmodified client, you must add two entries to your hosts fil
 ```
 127.0.0.1	stickonline.redirectme.net
 127.0.0.1	www.stick-online.com
+127.0.0.1	stick-online.com
 ```
 Start the client and it should connect to the server.
 
