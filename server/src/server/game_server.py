@@ -8,7 +8,7 @@ import traceback
 
 import config
 from client.client import Client
-from event import EventScheduler
+from event import scheduler
 from world.world import World
 from net import packet
 from net.buffer import *
@@ -22,8 +22,7 @@ class GameServer:
         self.port = port
         self.master = master
 
-        self.event_scheduler = EventScheduler()
-        self.world = World(self, self.event_scheduler)
+        self.world = World(self)
 
         self.terminated = False
 
@@ -33,7 +32,7 @@ class GameServer:
         self.client_to_id = LockDict() # Done!
         self.name_to_client = LockDict() # Done!
 
-        self.event_scheduler.schedule_event_recurring(self.ev_ping_clients, 5)
+        scheduler.schedule_event_recurring(self.ev_ping_clients, 5)
 
     def __call__(self):
         # create udp server thread
