@@ -3,13 +3,15 @@ from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 import json
 import logging
 import SocketServer
+from threading import Lock
 
 import config
 from event import scheduler
 from util import LockList
 
 log = logging.getLogger('web_svr')
-top_players = LockList()
+top_players = []
+top_players_lock = Lock()
 
 class WebServer(BaseHTTPRequestHandler):
     def _set_headers(self, status_code, content_type='text/plain', content_length=0):
@@ -38,7 +40,7 @@ class WebServer(BaseHTTPRequestHandler):
                 }))
 
             elif self.path == '/players':
-                with top_players:
+                with top_players_lock:
                     self._set_headers(200, content_type='application/json')
 
                     # we're just doing a single read so the lock is probably not strictly necessary
@@ -88,16 +90,15 @@ class WebServer(BaseHTTPRequestHandler):
 
 
 def upadte_top_players():
-    global top_players
-    with top_players:
-        del top_players[:]
-        top_players += db_ref.get_top_clients(include_admin=True)
+    global top_players, top_players_lock
+    with top_players_lock:
+        top_players = db_ref.get_top_clients(include_admin=True)
 
 def serve(master):
     global master_obj
     global db_ref
     global http_server
-    
+
     master_obj = master
     db_ref = master.db
 
