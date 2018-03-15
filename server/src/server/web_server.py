@@ -9,6 +9,7 @@ from event import scheduler
 from util import LockList
 
 log = logging.getLogger('web_svr')
+top_players = LockList()
 
 class WebServer(BaseHTTPRequestHandler):
     def _set_headers(self, status_code, content_type='text/plain', content_length=0):
@@ -39,6 +40,12 @@ class WebServer(BaseHTTPRequestHandler):
             elif self.path == '/players':
                 with top_players:
                     self._set_headers(200, content_type='application/json')
+
+                    # we're just doing a single read so the lock is probably not strictly necessary
+                    with master_obj.get_game_server().name_to_client as name_to_client:
+                        for player in top_players:
+                            player['online'] = name_to_client.get(player['name']) is not None
+
                     self.wfile.write(json.dumps({
                         'players': top_players
                     }))
@@ -82,13 +89,15 @@ class WebServer(BaseHTTPRequestHandler):
 
 def upadte_top_players():
     global top_players
-    top_players = LockList(db_ref.get_top_clients(include_admin=True))
+    with top_players:
+        del top_players[:]
+        top_players += db_ref.get_top_clients(include_admin=True)
 
 def serve(master):
     global master_obj
     global db_ref
     global http_server
-
+    
     master_obj = master
     db_ref = master.db
 
