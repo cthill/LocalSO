@@ -6,6 +6,7 @@ import traceback
 
 import command
 import config
+from event import scheduler
 from net import packet
 from world.bounding_box import BoundingBox
 from mailbox import mail_header
@@ -386,7 +387,7 @@ class Client(Mailbox):
         write_string(buff, reason)
         write_byte(buff, 1)
         self.send_tcp_message(buff)
-        self.world.event_scheduler.schedule_event(self.disconnect, 5)
+        scheduler.schedule_event(self.disconnect, 5)
 
     def handle_udp_packet(self, data):
         self.last_recv_timestamp = datetime.now()
