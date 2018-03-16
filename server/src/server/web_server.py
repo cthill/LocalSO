@@ -3,12 +3,15 @@ from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 import json
 import logging
 import SocketServer
+from threading import Lock
 
 import config
+from event import scheduler
+from util import LockList
 
 log = logging.getLogger('web_svr')
-# this is jank but whatever
-master_obj = None
+top_players = []
+top_players_lock = Lock()
 
 class WebServer(BaseHTTPRequestHandler):
     def _set_headers(self, status_code, content_type='text/plain', content_length=0):
@@ -35,6 +38,19 @@ class WebServer(BaseHTTPRequestHandler):
                     'status': status,
                     'players': players
                 }))
+
+            elif self.path == '/players':
+                with top_players_lock:
+                    self._set_headers(200, content_type='application/json')
+
+                    # we're just doing a single read so the lock is probably not strictly necessary
+                    with master_obj.get_game_server().name_to_client as name_to_client:
+                        for player in top_players:
+                            player['online'] = name_to_client.get(player['name']) is not None
+
+                    self.wfile.write(json.dumps({
+                        'players': top_players
+                    }))
 
             elif self.path == '/download/v2/Announcements.txt':
                 self._set_headers(200, content_length=len(config.MENU_MOTD))
@@ -72,21 +88,28 @@ class WebServer(BaseHTTPRequestHandler):
             self._set_headers(200, content_type='text/plain', content_length=len(file_bytes))
             self.wfile.write(file_bytes)
 
-class StickOnlineHTTPServer:
-    def __init__(self, interface, port, master):
-        self.interface = interface
-        self.port = port
 
-        # this is jank but whatever
-        self.master = master
-        global master_obj
-        master_obj = self.master
+def upadte_top_players():
+    global top_players, top_players_lock
+    with top_players_lock:
+        top_players = db_ref.get_top_clients(include_admin=True)
 
-        self.http_server = HTTPServer((self.interface, self.port), WebServer)
+def serve(master):
+    global master_obj
+    global db_ref
+    global http_server
 
-    def __call__(self):
-        log.info('listening on %s:%s' % (self.interface, self.port))
-        self.http_server.serve_forever()
+    master_obj = master
+    db_ref = master.db
 
-    def stop(self):
-        self.http_server.shutdown()
+    # setup top_players update job
+    # update top_players list every five minutes
+    scheduler.schedule_event_recurring(upadte_top_players, 60 * 5)
+    upadte_top_players()
+
+    http_server = HTTPServer((config.INTERFACE_HTTP, config.PORT_HTTP), WebServer)
+    log.info('listening on %s:%s' % (config.INTERFACE_HTTP, config.PORT_HTTP))
+    http_server.serve_forever()
+
+def stop():
+    http_server.shutdown()
