@@ -130,7 +130,6 @@ class SQLiteDB:
             item_rows = c.execute('SELECT * FROM unknown_list_2 WHERE client_id=?', (client_id,))
             return [x['list_element_id'] for x in item_rows]
 
-
     def save_client(self, d):
         with self.db_lock:
             client_id = d['id']
@@ -205,3 +204,14 @@ class SQLiteDB:
             if self.items_to_add.get(client_id) is None:
                 self.items_to_add[client_id] = []
             self.items_to_add[client_id].append(item_id)
+
+    def get_top_clients(self, include_admin=False):
+        with self.db_lock:
+            c = self.db.cursor()
+
+            if include_admin:
+                clients = c.execute('SELECT name, level, hat_equipped, weapon_equipped FROM clients WHERE banned=0 ORDER BY level DESC LIMIT 10')
+            else:
+                clients = c.execute('SELECT name, level, hat_equipped, weapon_equipped FROM clients WHERE banned=0 AND admin_level=0 ORDER BY level DESC LIMIT 10')
+
+            return [dict(x) for x in clients]

@@ -6,7 +6,7 @@ import time
 
 import config
 from db.db import SQLiteDB
-from server.web_server import StickOnlineHTTPServer
+from server import web_server
 from server.account_server import AccountServer
 from server.game_server import GameServer
 from util import LockDict
@@ -17,10 +17,9 @@ class StickOnlineMaster:
         self.db = SQLiteDB(config.SQLITE_DB_FILE)
         self.account_server = AccountServer(config.INTERFACE, config.PORT_ACCOUNT, self.db, self)
         self.game_server = GameServer(config.INTERFACE, config.PORT_GAME, self)
-        self.webserver = StickOnlineHTTPServer(config.INTERFACE_HTTP, config.PORT_HTTP, self)
 
     def start(self):
-        threading.Thread(target=self.webserver).start()
+        threading.Thread(target=web_server.serve, args=(self,)).start()
         threading.Thread(target=self.account_server).start()
         threading.Thread(target=self.game_server).start()
 
@@ -44,7 +43,7 @@ class StickOnlineMaster:
         return self.account_server
 
     def stop(self):
-        self.webserver.stop()
+        web_server.stop()
 
         # calling client.disconnect() will lock the game_server client set.
         # so we need to copy it
