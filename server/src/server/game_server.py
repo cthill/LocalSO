@@ -32,7 +32,7 @@ class GameServer:
         self.client_to_id = LockDict() # Done!
         self.name_to_client = LockDict() # Done!
 
-        scheduler.schedule_event_recurring(self.ev_ping_clients, 5)
+        scheduler.schedule_event_recurring(self._ev_step, 5)
 
     def __call__(self):
         # create udp server thread
@@ -86,7 +86,7 @@ class GameServer:
     def _client_accept(self, conn, addr):
         # enable TCP_NODELAY
         conn.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, True)
-        client_dat = self.master.get_pending_game_server_connection(addr[0])
+        client_dat = self.master.get_pending_login(addr[0])
         with acquire_all(self.clients, self.id_to_client, self.client_to_id, self.name_to_client):
             client_id = client_dat['id']
             new_client = Client(self, self.world, conn, client_id, client_dat)
@@ -124,7 +124,7 @@ class GameServer:
 
             client.send_tcp_message(data)
 
-    def ev_ping_clients(self):
+    def _ev_step(self):
         # copy the clients list so that we don't deadlock when calling client.disconnect()
         connected = []
         with self.clients:
@@ -141,9 +141,19 @@ class GameServer:
                     pass
                 self.log.info('Client %s timed out.' % client)
             else:
-                # this packet is ignored by the client but will reset the client
-                # sideconnection timeout
+                # this packet is ignored by the client but will reset the clientside connection timeout
                 client.send_tcp_message([packet.MSG_NOP])
 
-        # TODO: cleanup pending game server connections
+        # cleanup pending game server connections
+        with self.master.pending_logins:
+            to_delete = []
+            for key in self.master.pending_logins:
+                pending_login = self.master.pending_logins[key]
+                if now - pending_login['login_timestamp'] > timedelta(seconds=config.LOGIN_PENDING_TIMEOUT):
+                    self.log.debug('deleting pending login %s %s' % (key, pending_login['name']))
+                    to_delete.append(key)
+
+            for key in to_delete:
+                del self.master.pending_logins[key]
+
         # TODO: check if world thread is deadlocked
