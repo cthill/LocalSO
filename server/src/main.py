@@ -13,7 +13,7 @@ from util import LockDict
 
 class StickOnlineMaster:
     def __init__(self):
-        self.pending_game_server_connections = LockDict()
+        self.pending_logins = LockDict()
         self.db = SQLiteDB(config.SQLITE_DB_FILE)
         self.account_server = AccountServer(config.INTERFACE, config.PORT_ACCOUNT, self.db, self)
         self.game_server = GameServer(config.INTERFACE, config.PORT_GAME, self)
@@ -23,18 +23,13 @@ class StickOnlineMaster:
         threading.Thread(target=self.account_server).start()
         threading.Thread(target=self.game_server).start()
 
-    def add_pending_game_server_connection(self, ip, data):
-        with self.pending_game_server_connections:
-            self.pending_game_server_connections[ip] = data
+    def add_pending_login(self, ip, data):
+        with self.pending_logins:
+            self.pending_logins[ip] = data
 
-    def get_pending_game_server_connection(self, ip):
-        with self.pending_game_server_connections:
-            if ip in self.pending_game_server_connections:
-                dat = self.pending_game_server_connections[ip]
-                del self.pending_game_server_connections[ip]
-                return dat
-
-        return None
+    def get_pending_login(self, ip):
+        with self.pending_logins:
+            return self.pending_logins.get(ip)
 
     def get_game_server(self):
         return self.game_server
