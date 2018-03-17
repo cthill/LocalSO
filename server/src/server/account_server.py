@@ -201,6 +201,10 @@ class AccountServer:
             self._deny_request(conn, addr, 'Incorrect password.')
             return
 
+        if self.master.get_pending_login(addr[0]):
+            self._deny_request(conn, addr, 'A login attempt for this account is already in process. Please wait a moment and try again.')
+            return
+
         client_data = {
             'id': db_client['id'],
             'name': username,#db_client['name'], # in the original game, usernames were not case sensitive. But if you signed in with case changed in your name, people would see it.
@@ -210,7 +214,7 @@ class AccountServer:
             'admin': db_client['admin_level'],
             'login_timestamp': datetime.now()
         }
-        self.master.add_pending_game_server_connection(addr[0], client_data)
+        self.master.add_pending_login(addr[0], client_data)
 
         buff = []
         write_byte(buff, packet.RESP_LOGIN_ACCEPT)
