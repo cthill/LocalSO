@@ -31,7 +31,7 @@ class World(Mailbox):
     def __init__(self, game_server):
         super(World, self).__init__()
 
-        self.log = logging.getLogger('world')
+        self.logger = logging.getLogger('world')
 
         self.running = True
         self.game_server = game_server
@@ -152,7 +152,7 @@ class World(Mailbox):
                     time_to_wait = 0
                 time.sleep(time_to_wait)
         except Exception as e:
-            self.log.error('Unhandled exception in world %s' % (e))
+            self.logger.error('Unhandled exception in world %s' % (e))
             traceback.print_exc()
         finally:
             self.running = False

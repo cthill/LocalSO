@@ -16,7 +16,7 @@ from util import buff_to_str, LockList, LockDict, acquire_all
 
 class GameServer:
     def __init__(self, interface, port, master):
-        self.log = logging.getLogger('game_svr')
+        self.logger = logging.getLogger('game_svr')
 
         self.interface = interface
         self.port = port
@@ -48,28 +48,28 @@ class GameServer:
         s.bind((self.interface, self.port))
         s.listen(1)
 
-        self.log.info('listening %s:%s' % (self.interface, self.port))
+        self.logger.info('listening %s:%s' % (self.interface, self.port))
 
         while not self.terminated:
             conn, addr = s.accept()
-            self.log.info('new connection: %s:%s' % (addr))
+            self.logger.info('new connection: %s:%s' % (addr))
 
             try:
                 self._client_accept(conn, addr)
             except Exception as e:
-                self.log.error('Unhandled exception _client_accept %s' % (e))
+                self.logger.error('Unhandled exception _client_accept %s' % (e))
                 traceback.print_exc()
 
     def udp_server(self, interface, port):
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.bind((interface, port))
 
-        self.log.info('udp listening %s:%s' % (interface, port))
+        self.logger.info('udp listening %s:%s' % (interface, port))
 
         while not self.terminated:
             raw_data, addr = s.recvfrom(4096) # read up to 4096 bytes
             data = bytearray(raw_data)
-            self.log.debug('udp message: %s' % buff_to_str(data))
+            self.logger.debug('udp message: %s' % buff_to_str(data))
 
             client_id = read_ushort(data, 1)
             try:
@@ -80,7 +80,7 @@ class GameServer:
                 if client is not None:
                     client.handle_udp_packet(data)
             except Exception as e:
-                self.log.error('Unhandled exception udp_server %s' % (e))
+                self.logger.error('Unhandled exception udp_server %s' % (e))
                 traceback.print_exc()
 
     def _client_accept(self, conn, addr):
@@ -136,10 +136,10 @@ class GameServer:
             if now - client.last_recv_timestamp > timedelta(seconds=config.PLAYER_TIMEOUT):
                 try:
                     client.disconnect()
-                    self.log.info('Client %s timeout socket close' % client)
+                    self.logger.info('Client %s timeout socket close' % client)
                 except:
                     pass
-                self.log.info('Client %s timed out.' % client)
+                self.logger.info('Client %s timed out.' % client)
             else:
                 # this packet is ignored by the client but will reset the clientside connection timeout
                 client.send_tcp_message([packet.MSG_NOP])
@@ -150,7 +150,7 @@ class GameServer:
             for key in self.master.pending_logins:
                 pending_login = self.master.pending_logins[key]
                 if now - pending_login['login_timestamp'] > timedelta(seconds=config.LOGIN_PENDING_TIMEOUT):
-                    self.log.debug('deleting pending login %s %s' % (key, pending_login['name']))
+                    self.logger.debug('deleting pending login %s %s' % (key, pending_login['name']))
                     to_delete.append(key)
 
             for key in to_delete:

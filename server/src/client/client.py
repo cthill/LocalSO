@@ -21,7 +21,7 @@ class Client(Mailbox):
     def __init__(self, game_server, world, socket, id, client_data):
         super(Client, self).__init__()
 
-        self.log = logging.getLogger('C%s' % id)
+        self.logger = logging.getLogger('C%s' % id)
 
         # setup params
         self.game_server = game_server
@@ -105,7 +105,7 @@ class Client(Mailbox):
 
         except Exception as e:
             if not self.terminated:
-                self.log.error('Unhandled exception send_thread %s' % (e))
+                self.logger.error('Unhandled exception send_thread %s' % (e))
                 traceback.print_exc()
         finally:
             try:
@@ -134,7 +134,7 @@ class Client(Mailbox):
 
         except Exception as e:
             if not self.terminated:
-                self.log.error('Unhandled exception recv_thread %s' % (e))
+                self.logger.error('Unhandled exception recv_thread %s' % (e))
                 traceback.print_exc()
         finally:
             try:
@@ -149,7 +149,7 @@ class Client(Mailbox):
             self.world.client_disconnect(self)
             self.game_server.client_disconnect(self)
             self.socket.close()
-            self.log.info('disconnected')
+            self.logger.info('disconnected')
 
     def disconnect(self):
         self.terminated = True
@@ -160,7 +160,7 @@ class Client(Mailbox):
 
     def _handle_packet(self, data):
         self.last_recv_timestamp = datetime.now()
-        self.log.debug('data: %s' % (buff_to_str(data)))
+        self.logger.debug('data: %s' % (buff_to_str(data)))
 
         header = data[0]
         if header == packet.MSG_INIT:
@@ -263,7 +263,7 @@ class Client(Mailbox):
 
         elif header == packet.MSG_CLIENT_ERROR:
             error_code = read_short(data, 2)
-            self.log.info('error code from client %s' % (error_code))
+            self.logger.info('error code from client %s' % (error_code))
             # TODO: write to an error log
 
         elif header == packet.MSG_HAT_CHANGE:
@@ -295,7 +295,7 @@ class Client(Mailbox):
             mob_type = read_ushort(data, 3)
             x = read_uint(data, 5) / 10.0
             y = read_short(data, 9) / 10.0
-            # self.log.info('Client %s wants to spawn %s at (%s,%s)' % (self, mob_type, x, y))
+            # self.logger.info('Client %s wants to spawn %s at (%s,%s)' % (self, mob_type, x, y))
 
             new_mob = Mob(self.world.generate_mob_id(), mob_type, x, y, None, self.world)
             self.world.send_mail_message(mail_header.MSG_ADD_MOB, new_mob)
@@ -309,7 +309,7 @@ class Client(Mailbox):
             self.game_server.broadcast(buff)
 
         else:
-            self.log.info('unknown packet %s' % (buff_to_str(data)))
+            self.logger.info('unknown packet %s' % (buff_to_str(data)))
 
     def write_full_client_data(self, buff):
         write_ushort(buff, self.id) # id
@@ -427,7 +427,7 @@ class Client(Mailbox):
                 self.send_tcp_message(buff)
 
         except Exception as e:
-            self.log.error('Unhandled exception handle_udp %s' % (e))
+            self.logger.error('Unhandled exception handle_udp %s' % (e))
             traceback.print_exc()
 
     def __str__(self):
