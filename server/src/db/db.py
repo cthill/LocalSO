@@ -9,7 +9,7 @@ import config
 
 class SQLiteDB:
     def __init__(self, db_file):
-        self.log = logging.getLogger('db')
+        self.logger = logging.getLogger('db')
         self.db_file = db_file
         self.db_lock = Lock()
         self.items_to_add = {}
@@ -17,19 +17,19 @@ class SQLiteDB:
         should_init_db = not os.path.isfile(self.db_file)
 
         self.db = sqlite3.connect(self.db_file, check_same_thread=False)
-        self.log.info('Connected to database %s' % (self.db_file))
+        self.logger.info('Connected to database %s' % (self.db_file))
         self.db.row_factory = sqlite3.Row
 
         try:
             if should_init_db:
                 self._init_db()
         except Exception as e:
-            self.log.error('Error initializing the datbase. Please delete %s and try again.', config.SQLITE_DB_FILE)
+            self.logger.error('Error initializing the datbase. Please delete %s and try again.', config.SQLITE_DB_FILE)
             raise e
 
     def _init_db(self):
-        self.log.info('Performing first time setup.')
-        self.log.info('Creating database tables...')
+        self.logger.info('Performing first time setup.')
+        self.logger.info('Creating database tables...')
 
         with open(config.SQLITE_DB_INIT_FILE) as f:
             init_statements = f.read()
@@ -37,7 +37,7 @@ class SQLiteDB:
         c = self.db.cursor()
         c.executescript(init_statements)
         self.db.commit()
-        self.log.info('Done.')
+        self.logger.info('Done.')
 
         print 'You must register an admin account.'
         admin_username = raw_input("  username: ")
