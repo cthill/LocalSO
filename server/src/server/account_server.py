@@ -5,21 +5,18 @@ import threading
 import traceback
 
 import config
-from db.db import SQLiteDB
 from net import packet
 from net.buffer import *
 from net.socket import tcp_write
 from util import buff_to_str
 
-class AccountServer:
-    def __init__(self, interface, port, db, master):
-        self.log = logging.getLogger('account_svr')
+logger = logging.getLogger('account_svr')
 
+class AccountServer:
+    def __init__(self, interface, port, stick_online_server):
         self.interface = interface
         self.port = port
-        self.db = db
-        self.master = master
-
+        self.stick_online_server = stick_online_server
         self.terminated = False
 
     def __call__(self):
@@ -28,11 +25,11 @@ class AccountServer:
         s.bind((self.interface, self.port))
         s.listen(1)
 
-        self.log.info('listening %s:%s' % (self.interface, self.port))
+        logger.info('listening %s:%s' % (self.interface, self.port))
 
         while not self.terminated:
             conn, addr = s.accept()
-            self.log.info('new connection: %s:%s' % (addr))
+            logger.info('new connection: %s:%s' % (addr))
             t = threading.Thread(target=self._account_server_client, args=(conn, addr))
             t.start()
 
@@ -55,16 +52,16 @@ class AccountServer:
                     self._handle_packet(conn, addr, packet_data)
 
         except Exception as e:
-            self.log.error('Unhandled exception in client %s:%s thread %s' % (addr[0], addr[1], e))
+            logger.error('Unhandled exception in client %s:%s thread %s' % (addr[0], addr[1], e))
             traceback.print_exc()
         finally:
             conn.close()
-            self.log.info('client %s:%s disconnected' % addr)
+            logger.info('client %s:%s disconnected' % addr)
 
     def _handle_packet(self, conn, addr, data):
         enc_dec_buffer(data)
 
-        self.log.debug('client %s:%s data: %s' % (addr[0], addr[1], buff_to_str(data)))
+        logger.debug('client %s:%s data: %s' % (addr[0], addr[1], buff_to_str(data)))
 
         header = data[0]
         if header == packet.MSG_REGISTER:
@@ -74,13 +71,13 @@ class AccountServer:
         elif header == packet.MSG_SAVE:
             self._save(conn, addr, data)
         else:
-            self.log.info('client %s:%s unknown packet %s' % (addr[0], addr[1], buff_to_str(data)))
+            logger.info('client %s:%s unknown packet %s' % (addr[0], addr[1], buff_to_str(data)))
 
     def _deny_request(self, conn, addr, reason):
         buff = [packet.RESP_DENY_REQUEST]
         write_string(buff, reason)
         tcp_write(conn, buff, enc=True)
-        self.log.info('request denied %s:%s %s' % (addr[0], addr[1], reason))
+        logger.info('request denied %s:%s %s' % (addr[0], addr[1], reason))
 
 
     def _register(self, conn, addr, data):
@@ -98,7 +95,7 @@ class AccountServer:
         mac = read_string(data, offset)
         offset += len(mac) + 1
 
-        self.log.info('register request %s:%s %s:%s %s' % (addr[0], addr[1], username, pass_hash, mac))
+        logger.info('register request %s:%s %s:%s %s' % (addr[0], addr[1], username, pass_hash, mac))
 
         if config.REGISTER_CLOSED:
             self._deny_request(conn, addr, 'Registration is currently closed.')
@@ -131,12 +128,12 @@ class AccountServer:
             self._deny_request(conn, addr, 'You are banned.')
             return
 
-        if self.db.get_client(username.lower()) is not None:
+        if self.stick_online_server.db.get_client(username.lower()) is not None:
             self._deny_request(conn, addr, 'That username is taken.')
             return
 
-        self.db.create_client(username, pass_hash)
-        self.log.info('account created %s:%s %s' % (addr[0], addr[1], username))
+        self.stick_online_server.db.create_client(username, pass_hash)
+        logger.info('account created %s:%s %s' % (addr[0], addr[1], username))
 
         buff = [packet.RESP_SUCCESS]
         tcp_write(conn, buff, enc=True)
@@ -157,7 +154,7 @@ class AccountServer:
         mac = read_string(data, offset)
         offset += len(mac) + 1
 
-        self.log.info('login request %s:%s %s:%s %s' % (addr[0], addr[1], username, pass_hash, mac))
+        logger.info('login request %s:%s %s:%s %s' % (addr[0], addr[1], username, pass_hash, mac))
 
         if client_version != config.COMPATIBLE_GAME_VERSION:
             self._deny_request(conn, addr, 'You are using an incorrect version of the game. Please download version 0.0227')
@@ -181,14 +178,14 @@ class AccountServer:
             return
 
         # we're just doing a single read so the lock is probably not strictly necessary
-        with self.master.get_game_server().name_to_client as name_to_client:
+        with self.stick_online_server.game_server.name_to_client as name_to_client:
             account_in_use = name_to_client.get(username.lower()) is not None
 
         if account_in_use:
             self._deny_request(conn, addr, 'The requested account is currently in use.')
             return
 
-        db_client = self.db.get_client(username.lower())
+        db_client = self.stick_online_server.db.get_client(username.lower())
         if db_client is None:
             self._deny_request(conn, addr, 'Account does not exist.')
             return
@@ -201,7 +198,7 @@ class AccountServer:
             self._deny_request(conn, addr, 'Incorrect password.')
             return
 
-        if self.master.get_pending_login(addr[0]):
+        if self.stick_online_server.game_server.get_pending_login(addr[0]):
             self._deny_request(conn, addr, 'A login attempt for this account is already in process. Please wait a moment and try again.')
             return
 
@@ -214,7 +211,7 @@ class AccountServer:
             'admin': db_client['admin_level'],
             'login_timestamp': datetime.now()
         }
-        self.master.add_pending_login(addr[0], client_data)
+        self.stick_online_server.game_server.add_pending_login(addr[0], client_data)
 
         buff = []
         write_byte(buff, packet.RESP_LOGIN_ACCEPT)
@@ -245,17 +242,17 @@ class AccountServer:
         write_double(buff, db_client['gold'])
 
         # write num_items and
-        items = self.db.get_items(db_client['id'])
+        items = self.stick_online_server.db.get_items(db_client['id'])
         write_byte(buff, len(items))
         for i in range(len(items)):
             write_ushort(buff, items[i])
 
-        list_1 = self.db.get_unknown_list_1(db_client['id'])
+        list_1 = self.stick_online_server.db.get_unknown_list_1(db_client['id'])
         write_ushort(buff, len(list_1))
         for i in range(len(list_1)):
             write_ushort(buff, list_1[i])
 
-        list_2 = self.db.get_unknown_list_2(db_client['id'])
+        list_2 = self.stick_online_server.db.get_unknown_list_2(db_client['id'])
         write_ushort(buff, len(list_2))
         for i in range(len(list_2)):
             write_ushort(buff, list_2[i])
@@ -275,7 +272,7 @@ class AccountServer:
         pass_hash = read_string(data, offset)
         offset += len(pass_hash) + 1
 
-        self.log.info('save request %s:%s %s:%s' % (addr[0], addr[1], username, pass_hash))
+        logger.info('save request %s:%s %s:%s' % (addr[0], addr[1], username, pass_hash))
 
         save_data = {}
         save_data['spawn_x'] = int(round(read_int(data, offset) / 10.0)); offset += 4
@@ -323,7 +320,7 @@ class AccountServer:
             self._deny_request(conn, addr, 'Save Error: Incorrect game version.')
             return
 
-        db_client = self.db.get_client(username.lower())
+        db_client = self.stick_online_server.db.get_client(username.lower())
         if db_client is None:
             self._deny_request(conn, addr, 'Save Error: Client not found.')
             return
@@ -334,10 +331,10 @@ class AccountServer:
 
         try:
             save_data['id'] = db_client['id']
-            self.db.save_client(save_data)
+            self.stick_online_server.db.save_client(save_data)
         except Exception as e:
             self._deny_request(conn, addr, 'Save Error: Exception occured during save.')
-            self.log.error('Saving failed %s' % e)
+            logger.error('Saving failed %s' % e)
             import traceback
             traceback.print_exc()
             return
