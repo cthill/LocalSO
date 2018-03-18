@@ -1,5 +1,6 @@
 from contextlib import contextmanager
 import math
+import signal
 import threading
 
 def bytes_to_str(data):
@@ -68,6 +69,14 @@ class LockList(list):
     def release(self):
         self.lock.release()
 
+class SigHandler:
+    def __init__(self):
+        self.caught_signal = False
+        signal.signal(signal.SIGINT, self.handle_signal)
+        signal.signal(signal.SIGTERM, self.handle_signal)
+
+    def handle_signal(self, signum, frame):
+        self.caught_signal = True
 
 # acquire_all function taken from:
 #  Python Cookbook, 3rd Edition
