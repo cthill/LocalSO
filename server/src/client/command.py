@@ -7,14 +7,15 @@ from net import packet
 from net.buffer import *
 from world.mob import Mob
 
-log = logging.getLogger('admin_cmd')
+logger = logging.getLogger('admin_cmd')
 CHAT_RESPONSE_COLOR = 1
 CHAT_PUBLIC_COLOR = 2
 
-def handle_admin_command(client, command):
+def handle_admin_command(client, command_string):
+    db_ref = client.game_server.stick_online_server.db
     cmd = ''
     try:
-        cleaned = command.strip()[1:]
+        cleaned = command_string.strip()[1:]
         tokens = cleaned.split(' ')
 
         cmd = tokens[0]
@@ -95,7 +96,7 @@ def handle_admin_command(client, command):
                     target_client_obj = name_to_client.get(target_name.lower())
 
                 if target_client_obj is not None:
-                    log.info('%s kicked %s.' % (client, target_client_obj))
+                    logger.info('%s kicked %s.' % (client, target_client_obj))
                     send_public_chat(client, '%s was kicked.' % target_client_obj.name)
                     target_client_obj.terminated = True
                 else:
@@ -105,13 +106,12 @@ def handle_admin_command(client, command):
 
         elif cmd == 'ban' or cmd == 'unban':
             if len(tokens) == 2:
-                db_ref = client.game_server.master.db
                 target_name = tokens[1]
                 target_client_db = db_ref.get_client(target_name.lower())
 
                 if target_client_db is not None:
                     db_ref.ban_unban_client(target_client_db['id'], cmd == 'ban')
-                    log.info('%s %sned %s.' % (client, cmd, target_client_db['name']))
+                    logger.info('%s %sned %s.' % (client, cmd, target_client_db['name']))
                     send_public_chat(client, '%s was %sned.' % (target_client_db['name'], cmd))
 
                     # we're just doing a single read so the lock is probably not strictly necessary
@@ -127,7 +127,6 @@ def handle_admin_command(client, command):
 
         elif cmd == 'setadmin':
             if len(tokens) == 3:
-                db_ref = client.game_server.master.db
                 target_name = tokens[1]
                 admin_val = tokens[2]
                 if admin_val == 'true' or admin_val == 'false':
@@ -135,7 +134,7 @@ def handle_admin_command(client, command):
                     if target_client_db is not None:
                         db_ref.set_admin_client(target_client_db['id'], admin_val == 'true')
 
-                        log.info('%s set %s admin %s.' % (client, target_client_db['name'], admin_val))
+                        logger.info('%s set %s admin %s.' % (client, target_client_db['name'], admin_val))
                         send_chat_response(client, 'Set %s admin to %s.' % (target_name, admin_val))
 
                         # we're just doing a single read so the lock is probably not strictly necessary
@@ -155,7 +154,6 @@ def handle_admin_command(client, command):
             if len(tokens) == 2:
                 item_id = int(tokens[1])
                 if item_id >= 1 and item_id <= 72:
-                    db_ref = client.game_server.master.db
                     client_db = db_ref.get_client(client.name.lower())
                     if client_db is not None:
                         client_db_id = client_db['id']
@@ -179,7 +177,7 @@ def handle_admin_command(client, command):
 
     except Exception as e:
         bad_command_single(client, cmd)
-        log.error('Error processing client %s command %s %s' % (client, command, e))
+        logger.error('Error processing client %s command %s %s' % (client, command_string, e))
         import traceback
         traceback.print_exc()
 
