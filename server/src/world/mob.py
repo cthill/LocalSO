@@ -322,19 +322,19 @@ class Mob():
             self.xspeed_knockback = 0
             self.yspeed = 0
         else:
-            bottom_sliver_bbox = BoundingBox(x_as_int - self.x_offset, y_as_int - self.y_offset + self.h - 1, self.w, 1)
+            sliver_height = config.WORLD_TERMINAL_VELOCITY + 1
+            bottom_sliver_bbox = BoundingBox(x_as_int - self.x_offset, y_as_int - self.y_offset + self.h - sliver_height, self.w, sliver_height)
             touching_jump_through = self.world.get_jump_through_blocks_at(bottom_sliver_bbox)
-            if len(touching_jump_through) > 0:
+            if len(touching_jump_through) > 0 and self.yspeed > 0:
                 min_touching_y = config.WORLD_HEIGHT
 
                 for jump_through_block in touching_jump_through:
                     if jump_through_block.y < min_touching_y:
                         min_touching_y = jump_through_block.y
 
-                if self.yspeed > 0:
-                    self.y = min_touching_y - self.h + self.y_offset
-                    self.xspeed_knockback = 0
-                    self.yspeed = 0
+                self.y = min_touching_y - self.h + self.y_offset
+                self.xspeed_knockback = 0
+                self.yspeed = 0
 
     def _do_animation(self):
         if self.sprite_index == SPRITE_INDEX_ATTACK and self.image_index >= self.sprite['frames']:
