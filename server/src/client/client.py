@@ -14,7 +14,7 @@ from mailbox import Mailbox
 from world.mob import Mob
 from net.buffer import *
 from net.socket import tcp_write
-from util import buff_to_str, dist
+from util import buff_to_str, dist, LockList
 
 class Client(Mailbox):
 
@@ -55,6 +55,9 @@ class Client(Mailbox):
         self.update_position(0, 0)
 
         self.last_recv_timestamp = datetime.now()
+
+        self.add_items_on_disconnect = LockList()
+        self.set_stats_on_disconnect = None
 
     def send_tcp_message(self, data):
         self.send_mail_message(mail_header.MSG_CLIENT_SEND_TCP, data)
@@ -154,6 +157,19 @@ class Client(Mailbox):
             self.game_server.client_disconnect(self)
             self.socket.close()
             self.logger.info('disconnected')
+
+            # wait 5 seconds so the client has time to save and disconnect
+            # HACK: using a delay to win a race condition
+            scheduler.schedule_event(self._post_disconnect_event, 5)
+
+    def _post_disconnect_event(self):
+        if len(self.add_items_on_disconnect) > 0:
+            self.logger.info('adding items %s' % self.add_items_on_disconnect)
+            self.game_server.stick_online_server.db.add_items(self.id, self.add_items_on_disconnect)
+
+        if self.set_stats_on_disconnect is not None:
+            self.logger.info('setting stats %s' % self.set_stats_on_disconnect)
+            self.game_server.stick_online_server.db.set_stats(self.id, self.set_stats_on_disconnect)
 
     def disconnect(self):
         self.terminated = True
