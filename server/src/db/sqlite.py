@@ -16,6 +16,7 @@ class SQLiteDB:
 
         self.db_lock = Lock()
         self.items_to_add = {}
+        self.levels_to_change = {}
 
         should_create_db = not os.path.isfile(self.db_file)
 
@@ -66,7 +67,7 @@ class SQLiteDB:
             int_unknown_4, int_unknown_5, gold, clan
         )
         VALUES
-        (?, ?, ?, ?, ?, null, null, 0, 1080, 300, 739, 1200, 128, 128, 128, 128, 128, 255, 0.0, 250, 0, 0, 10, 17, 0, 0, 0, 9999999, '')
+        (?, ?, ?, ?, ?, null, null, 0, 1080, 300, 739, 1200, 150, 150, 150, 150, 1, 255, 0.0, 250, 0, 0, 10, 17, 0, 0, 0, 9999999, '')
         ''', (0, admin_username.lower(), admin_passhash, now, now))
 
         # add items
@@ -138,6 +139,32 @@ class SQLiteDB:
     def save_client(self, d):
         with self.db_lock:
             client_id = d['id']
+
+            if self.levels_to_change.get(client_id) is not None:
+                new_level = self.levels_to_change[client_id]['level']
+                is_admin = self.levels_to_change[client_id]['admin_level'] == 250
+
+                if not is_admin:
+                    if new_level >= 1 and new_level <= 100:
+                        d['level'] = new_level
+                        d['stat_str'] = 1
+                        d['stat_agi'] = 1
+                        d['stat_int'] = 1
+                        d['stat_vit'] = 1
+                        d['stat_points'] = new_level - 1
+                        if new_level == 100:
+                            d['stat_points'] += 4
+                elif new_level <= 255:
+                    d['level'] = new_level
+                    # 150 is the max for any stat
+                    d['stat_str'] = 150
+                    d['stat_agi'] = 150
+                    d['stat_int'] = 150
+                    d['stat_vit'] = 150
+                    d['stat_points'] = 0
+
+                del self.levels_to_change[client_id]
+
             save_values = (
                 datetime.now().isoformat(), d['spawn_x'], d['spawn_y'], d['hp'],
                 d['mp'], d['stat_str'], d['stat_agi'], d['stat_int'], d['stat_vit'],
@@ -209,6 +236,13 @@ class SQLiteDB:
             if self.items_to_add.get(client_id) is None:
                 self.items_to_add[client_id] = []
             self.items_to_add[client_id].append(item_id)
+
+    def set_level_on_save(self, client_id, admin_level, level):
+        with self.db_lock:
+            self.levels_to_change[client_id] = {
+                'admin_level': admin_level,
+                'level': level
+            }
 
     def get_top_clients(self, include_admin=False):
         with self.db_lock:

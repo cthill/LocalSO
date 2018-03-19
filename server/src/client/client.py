@@ -84,15 +84,19 @@ class Client(Mailbox):
         self.send_tcp_message(buff)
 
         buff = [packet.RESP_CHAT]
+        write_string(buff, '%s connected.' % self.name)
+        write_byte(buff, 2)
+        self.game_server.broadcast(buff)
+
+        buff = [packet.RESP_CHAT]
         write_string(buff, config.INGAME_MOTD)
         write_byte(buff, 2)
         self.send_tcp_message(buff)
 
-        if self.admin == 250:
-            buff = [packet.RESP_CHAT]
-            write_string(buff, 'Type !help for a list of admin commands.')
-            write_byte(buff, 1)
-            self.send_tcp_message(buff)
+        buff = [packet.RESP_CHAT]
+        write_string(buff, 'Type !help for a list of %s commands.' % ('admin' if self.admin == 250 else 'player'))
+        write_byte(buff, 1)
+        self.send_tcp_message(buff)
 
     def _send_thread(self):
         try:
