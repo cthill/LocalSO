@@ -93,7 +93,8 @@ class GameServer:
             self.id_to_client[client_id] = new_client
             self.client_to_id[new_client] = client_id
             self.name_to_client[client_dat['name'].lower()] = new_client
-            new_client.start()
+
+        new_client.start()
 
     def client_disconnect(self, client):
         with acquire_all(self.clients, self.id_to_client, self.client_to_id, self.name_to_client):
