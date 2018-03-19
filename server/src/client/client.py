@@ -56,11 +56,6 @@ class Client(Mailbox):
 
         self.last_recv_timestamp = datetime.now()
 
-        # write player id
-        buff = []
-        write_ushort(buff, self.id)
-        self.send_tcp_message(buff)
-
     def send_tcp_message(self, data):
         self.send_mail_message(mail_header.MSG_CLIENT_SEND_TCP, data)
 
@@ -78,6 +73,11 @@ class Client(Mailbox):
         t = threading.Thread(target=self._recv_thread)
         t.start()
 
+        # write player id
+        buff = []
+        write_ushort(buff, self.id)
+        self.send_tcp_message(buff)
+
         # write number of players online
         buff = [packet.RESP_NUM_PLAYERS]
         write_ushort(buff, self.game_server.get_num_players())
@@ -86,7 +86,7 @@ class Client(Mailbox):
         buff = [packet.RESP_CHAT]
         write_string(buff, '%s connected.' % self.name)
         write_byte(buff, 2)
-        self.game_server.broadcast(buff)
+        self.game_server.broadcast(buff, exclude=self)
 
         buff = [packet.RESP_CHAT]
         write_string(buff, config.INGAME_MOTD)
@@ -234,7 +234,7 @@ class Client(Mailbox):
             offset += len(message) + 1
             chat_type = read_byte(data, offset)
 
-            if self.admin == 0xfa and message.strip().startswith('!'):
+            if message.strip().startswith('!'):
                 command.handle_admin_command(self, message)
                 return
 
