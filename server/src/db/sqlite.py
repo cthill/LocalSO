@@ -12,10 +12,8 @@ logger = logging.getLogger('db')
 class SQLiteDB:
     def __init__(self, db_file, stick_online_server):
         self.db_file = db_file
-        self.stick_online_server = stick_online_server
-
         self.db_lock = Lock()
-        self.items_to_add = {}
+        self.stick_online_server = stick_online_server
 
         should_create_db = not os.path.isfile(self.db_file)
 
@@ -66,7 +64,7 @@ class SQLiteDB:
             int_unknown_4, int_unknown_5, gold, clan
         )
         VALUES
-        (?, ?, ?, ?, ?, null, null, 0, 1080, 300, 739, 1200, 128, 128, 128, 128, 128, 255, 0.0, 250, 0, 0, 10, 17, 0, 0, 0, 9999999, '')
+        (?, ?, ?, ?, ?, null, null, 0, 1080, 300, 739, 1200, 150, 150, 150, 150, 1, 255, 0.0, 250, 0, 0, 10, 17, 0, 0, 0, 9999999, '')
         ''', (0, admin_username.lower(), admin_passhash, now, now))
 
         # add items
@@ -172,12 +170,6 @@ class SQLiteDB:
             WHERE id=?
             ''', save_values)
 
-            if self.items_to_add.get(client_id) is not None:
-                for item_id in self.items_to_add.get(client_id):
-                    if len(d['inventory']) < 20 and item_id >= 1 and item_id <= 72:
-                         d['inventory'].append(item_id)
-                del self.items_to_add[client_id]
-
             c.execute('DELETE FROM inventory WHERE client_id=?', (client_id,))
             for item_id in d['inventory']:
                 c.execute('INSERT INTO inventory (client_id, item_id) VALUES (?, ?)', (client_id, item_id))
@@ -204,11 +196,43 @@ class SQLiteDB:
             c.execute('UPDATE clients SET admin_level=? WHERE id=?', (250 if admin else 0, client_id))
             self.conn.commit()
 
-    def add_item_on_save(self, client_id, item_id):
+    def set_stats(self, client_id, stats):
+        '''
+        Update player stats in db. Does not check for valid values.
+        '''
+
         with self.db_lock:
-            if self.items_to_add.get(client_id) is None:
-                self.items_to_add[client_id] = []
-            self.items_to_add[client_id].append(item_id)
+            c = self.conn.cursor()
+
+            vals = (stats['level'], stats['stat_str'], stats['stat_agi'], stats['stat_int'],
+                    stats['stat_vit'], stats['stat_points'], client_id)
+
+            c.execute('''
+            UPDATE clients SET
+                level=?,
+                stat_str=?,
+                stat_agi=?,
+                stat_int=?,
+                stat_vit=?,
+                stat_points=?,
+                experience=0.0
+            WHERE id=?
+            ''', vals)
+            self.conn.commit()
+
+    def add_items(self, client_id, items):
+        with self.db_lock:
+            c = self.conn.cursor()
+            item_rows = c.execute('SELECT * FROM inventory WHERE client_id=?', (client_id,))
+            num_items = len([x for x in item_rows])
+            num_to_insert = min(20 - num_items, len(items))
+            for i in range(num_to_insert):
+                item_id = items[i]
+                c.execute('INSERT INTO inventory (client_id, item_id) VALUES (?, ?)', (client_id, item_id))
+
+            if num_to_insert > 0:
+                self.conn.commit()
+
 
     def get_top_clients(self, include_admin=False):
         with self.db_lock:
