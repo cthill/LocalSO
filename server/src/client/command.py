@@ -109,12 +109,13 @@ def _cmd_item(client, tokens):
         if client_db is not None:
             client_db_id = client_db['id']
             item_list = db_ref.get_items(client_db_id)
-            if len(item_list) < 20:
-                db_ref.add_item_on_save(client_db_id, item_id)
-                item_name = config.ITEM_DATA[item_id]['name']
-                client.kick_with_reason('%s added to your inventory. You will now be disconnected.' % item_name)
-            else:
-                raise CommandError('you have too many items. Please make room in your inventory.')
+            with client.add_items_on_disconnect as new_items:
+                if len(item_list) + len(new_items) < 20:
+                    new_items.append(item_id)
+                    item_name = config.ITEM_DATA[item_id]['name']
+                    _send_chat_response(client, '%s will be added to your inventory on disconnect.' % item_name)
+                else:
+                    raise CommandError('too many items. Make room in inventory and disconnect before trying again.')
     else:
         raise CommandError('invalid item id.')
 
@@ -126,12 +127,26 @@ def _cmd_level(client, tokens):
     if level < 1 or (client.admin != 250 and level > 100) or (client.admin == 250 and level > 255):
         raise CommandError('level must be between 1 and %s' % (255 if client.admin == 250 else 100))
 
-    db_ref = client.game_server.stick_online_server.db
-    client_db = db_ref.get_client(client.name.lower())
-    if client_db is not None:
-        client_db_id = client_db['id']
-        db_ref.set_level_on_save(client_db_id, client.admin, level)
-        client.kick_with_reason('Level set to %s. You will now be disconnected.' % level)
+    new_stats = {}
+    if not client.admin:
+        new_stats['level'] = level
+        new_stats['stat_str'] = 1
+        new_stats['stat_agi'] = 1
+        new_stats['stat_int'] = 1
+        new_stats['stat_vit'] = 1
+        new_stats['stat_points'] = level - 1
+        if level == 100:
+            new_stats['stat_points'] += 4
+    else:
+        new_stats['level'] = level
+        new_stats['stat_str'] = 150
+        new_stats['stat_agi'] = 150
+        new_stats['stat_int'] = 150
+        new_stats['stat_vit'] = 150
+        new_stats['stat_points'] = 0
+
+    client.set_stats_on_disconnect = new_stats
+    client.kick_with_reason('Level set to %s and stats reset. You will now be disconnected.' % level)
 
 def _cmd_godmode(client, tokens):
     client.god_mode = not client.god_mode
@@ -253,14 +268,60 @@ def _cmd_setadmin(client, tokens):
         db_ref = client.game_server.stick_online_server.db
         target_client_db = db_ref.get_client(target_name.lower())
         if target_client_db is not None:
-            db_ref.set_admin_client(target_client_db['id'], admin_val == 'true')
-            _send_chat_response(client, 'Set %s admin to %s.' % (target_name, admin_val))
-
             # we're just doing a single read so the lock is probably not strictly necessary
             with client.game_server.name_to_client as name_to_client:
                 target_client_obj = name_to_client.get(target_name.lower())
 
+            old_admin = target_client_db['admin_level']
+            if old_admin == 250 and admin_val != 'true':
+                # player is changing from admin to not admin so we may need to reset
+                # their stat points since the client check for abnormal stats
+                stats = {
+                    'level': target_client_db['level'],
+                    'stat_str': target_client_db['stat_str'],
+                    'stat_agi': target_client_db['stat_agi'],
+                    'stat_int': target_client_db['stat_int'],
+                    'stat_vit': target_client_db['stat_vit'],
+                    'stat_points': target_client_db['stat_points'],
+                }
+
+                reset_stat_points = False
+                stats_sum = stats['stat_str'] + stats['stat_agi'] + stats['stat_int'] + stats['stat_vit'] + stats['stat_points']
+
+                if stats['level'] < 100:
+                    # check if player got more than one stat per level
+                    if stats_sum - 4 != stats['level'] - 1:
+                        reset_stat_points = True
+                elif stats['level'] == 100:
+                    # the player gets an extra 4 stat points when they reach level 100
+                    if stats_sum - 4 != stats['level'] - 1 + 4:
+                        reset_stat_points = True
+                else:
+                    stats['level'] = 100
+                    reset_stat_points = True
+
+                if reset_stat_points:
+
+                    stats['stat_str'] = 1
+                    stats['stat_agi'] = 1
+                    stats['stat_int'] = 1
+                    stats['stat_vit'] = 1
+                    stats['stat_points'] = stats['level'] - 1
+                    if stats['level'] == 100:
+                        stats['stat_points'] += 4
+
+                    if target_client_obj is not None:
+                        target_client_obj.set_stats_on_disconnect = stats
+                    else:
+                        db_ref.set_stats(target_client_db['id'], stats)
+
+            db_ref.set_admin_client(target_client_db['id'], admin_val == 'true')
+            _send_chat_response(client, 'Set %s admin to %s.' % (target_name, admin_val))
+
             if target_client_obj is not None:
+                # the client application has no way for the server to indicate
+                # that the player's admin status has changed. So we must disconnect
+                # them and write to the db while they are disconnected
                 target_client_obj.kick_with_reason('There has been a change to your admin status. You will now be disconnected.')
         else:
             raise CommandError('player %s not found.' % target_name)
@@ -296,7 +357,7 @@ COMMANDS = [
     # player commands
     Command('help', _cmd_help, arg_str='[cmd_name]', max_args=1, description='Display a help menu.', admin=False),
     Command('item', _cmd_item, arg_str='<item_id>', max_args=1, description='Obtain an item of id (1 to 72).', admin=False),
-    Command('level', _cmd_level, arg_str='<level>', max_args=1, description='Set level (1 to 100). Will reset stats.', admin=False),
+    Command('level', _cmd_level, arg_str='<level>', max_args=1, description='Set level (will reset stats).', admin=False),
     Command('godmode', _cmd_godmode, arg_str='', max_args=0, description='Toggle godmode.', admin=False),
     # admin commands
     Command('spawn', _cmd_spawn, arg_str='<mob_id> [amount]', max_args=2, description='Spawn mob(s) of given id (0 to 18).', admin=True),
