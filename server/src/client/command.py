@@ -82,9 +82,12 @@ def _cmd_help(client, tokens):
                 line_str += command.name
 
                 cmds_processed += 1
-                if cmds_processed % 4 == 0:
+                if cmds_processed % 5 == 0:
                     lines.append(' ' + line_str)
                     line_str = ''
+
+        if line_str:
+            lines.append(' ' + line_str)
 
         lines.append('Type !help <command_name> for usage information.')
 
