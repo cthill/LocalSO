@@ -14,7 +14,7 @@ from mailbox import Mailbox
 from world.mob import Mob
 from net.buffer import *
 from net.socket import tcp_write
-from util import buff_to_str, dist
+from util import buff_to_str, dist, LockList
 
 class Client(Mailbox):
 
@@ -56,10 +56,8 @@ class Client(Mailbox):
 
         self.last_recv_timestamp = datetime.now()
 
-        # write player id
-        buff = []
-        write_ushort(buff, self.id)
-        self.send_tcp_message(buff)
+        self.add_items_on_disconnect = LockList()
+        self.set_stats_on_disconnect = None
 
     def send_tcp_message(self, data):
         self.send_mail_message(mail_header.MSG_CLIENT_SEND_TCP, data)
@@ -78,21 +76,30 @@ class Client(Mailbox):
         t = threading.Thread(target=self._recv_thread)
         t.start()
 
+        # write player id
+        buff = []
+        write_ushort(buff, self.id)
+        self.send_tcp_message(buff)
+
         # write number of players online
         buff = [packet.RESP_NUM_PLAYERS]
         write_ushort(buff, self.game_server.get_num_players())
         self.send_tcp_message(buff)
 
         buff = [packet.RESP_CHAT]
+        write_string(buff, '%s connected.' % self.name)
+        write_byte(buff, 2)
+        self.game_server.broadcast(buff, exclude=self)
+
+        buff = [packet.RESP_CHAT]
         write_string(buff, config.INGAME_MOTD)
         write_byte(buff, 2)
         self.send_tcp_message(buff)
 
-        if self.admin == 250:
-            buff = [packet.RESP_CHAT]
-            write_string(buff, 'Type !help for a list of admin commands.')
-            write_byte(buff, 1)
-            self.send_tcp_message(buff)
+        buff = [packet.RESP_CHAT]
+        write_string(buff, 'Type !help for a list of %s commands.' % ('admin' if self.admin == 250 else 'player'))
+        write_byte(buff, 1)
+        self.send_tcp_message(buff)
 
     def _send_thread(self):
         try:
@@ -150,6 +157,19 @@ class Client(Mailbox):
             self.game_server.client_disconnect(self)
             self.socket.close()
             self.logger.info('disconnected')
+
+            # wait 5 seconds so the client has time to save and disconnect
+            # HACK: using a delay to win a race condition
+            scheduler.schedule_event(self._post_disconnect_event, 5)
+
+    def _post_disconnect_event(self):
+        if len(self.add_items_on_disconnect) > 0:
+            self.logger.info('adding items %s' % self.add_items_on_disconnect)
+            self.game_server.stick_online_server.db.add_items(self.id, self.add_items_on_disconnect)
+
+        if self.set_stats_on_disconnect is not None:
+            self.logger.info('setting stats %s' % self.set_stats_on_disconnect)
+            self.game_server.stick_online_server.db.set_stats(self.id, self.set_stats_on_disconnect)
 
     def disconnect(self):
         self.terminated = True
@@ -230,7 +250,7 @@ class Client(Mailbox):
             offset += len(message) + 1
             chat_type = read_byte(data, offset)
 
-            if self.admin == 0xfa and message.strip().startswith('!'):
+            if message.strip().startswith('!'):
                 command.handle_admin_command(self, message)
                 return
 
