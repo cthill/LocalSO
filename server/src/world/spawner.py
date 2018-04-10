@@ -39,19 +39,20 @@ class MobSpawner:
         if mob_type_to_spawn == 0 and randint(0, int(round(110.0 / config.MOB_SPAWN_CHANCE_BOSS_MULTIPLIER))) == 0:
             mob_type_to_spawn = 2 # big blob boss
 
-        if mob_type_to_spawn != 6:
-            if randint(0, int(round(14.0 / config.MOB_SPAWN_CHANCE_BUNNY_MULTIPLIER))) == 0:
+        if mob_type_to_spawn == 0 or mob_type_to_spawn == 3:
+            if randint(0, int(round(150.0 / config.MOB_SPAWN_CHANCE_BUNNY_MULTIPLIER))) == 0:
                 if randint(0, 5) == 0:
                     mob_type_to_spawn = 11 # black bunny
                 else:
                     mob_type_to_spawn = 5 # bunny
 
         if mob_type_to_spawn == 7 or mob_type_to_spawn == 9:
-            if randint(0, int(round(180.0 / config.MOB_SPAWN_CHANCE_BOSS_MULTIPLIER))) == 0:
+            if randint(0, int(round(50.0 / config.MOB_SPAWN_CHANCE_BOSS_MULTIPLIER))) == 0:
                 mob_type_to_spawn = 10 # dark sage
 
         if mob_type_to_spawn == 9:
-            if randint(0, int(round(1000.0 / config.MOB_SPAWN_CHANCE_BOSS_MULTIPLIER))) == 0:
+            # the 250.0 here is just a guess. All of the other spawn chances were extracted from the client.
+            if randint(0, int(round(250.0 / config.MOB_SPAWN_CHANCE_BOSS_MULTIPLIER))) == 0:
                 mob_type_to_spawn = 16 # sand fiend
 
         new_mob_id = self._generate_mob_id()
