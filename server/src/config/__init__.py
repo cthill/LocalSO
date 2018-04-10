@@ -63,6 +63,15 @@ with open(DATA_DIR + '/item.json') as f:
     for item in json.loads(f.read()):
         ITEM_DATA[item['id']] = item
 
+# load player spawn data
+PLAYER_SPAWN = {}
+with open(DATA_DIR + '/player_spawn.json') as f:
+    for spawn_point in json.loads(f.read()):
+        PLAYER_SPAWN[spawn_point['id']] = spawn_point
+
+# set default spawn for new accounts
+PLAYER_SPAWN_DEFAULT = PLAYER_SPAWN[1]
+
 
 # Do not change these parameters, modifying them may cause bugs or performance issues
 COMPATIBLE_GAME_VERSION = 439.0

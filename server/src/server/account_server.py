@@ -277,6 +277,7 @@ class AccountServer:
         save_data = {}
         save_data['spawn_x'] = int(round(read_int(data, offset) / 10.0)); offset += 4
         save_data['spawn_y'] = int(round(read_short(data, offset) / 10.0)); offset += 2
+        logger.info('Spawnpoint save %s %s' % (save_data['spawn_x'], save_data['spawn_y']))
         save_data['hp'] = read_ushort(data, offset); offset += 2
         save_data['mp'] = read_ushort(data, offset); offset += 2
 

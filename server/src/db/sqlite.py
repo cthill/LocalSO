@@ -64,8 +64,8 @@ class SQLiteDB:
             int_unknown_4, int_unknown_5, gold, clan
         )
         VALUES
-        (?, ?, ?, ?, ?, null, null, 0, 1080, 300, 739, 1200, 150, 150, 150, 150, 1, 255, 0.0, 250, 0, 0, 10, 17, 0, 0, 0, 9999999, '')
-        ''', (0, admin_username.lower(), admin_passhash, now, now))
+        (?, ?, ?, ?, ?, null, null, 0, ?, ?, 739, 1200, 150, 150, 150, 150, 1, 255, 0.0, 250, 0, 0, 10, 17, 0, 0, 0, 9999999, '')
+        ''', (0, admin_username.lower(), admin_passhash, now, now, config.PLAYER_SPAWN_DEFAULT['x'], config.PLAYER_SPAWN_DEFAULT['y']))
 
         # add items
         items = [
@@ -218,6 +218,16 @@ class SQLiteDB:
                 experience=0.0
             WHERE id=?
             ''', vals)
+            self.conn.commit()
+
+    def set_spawn_x(self, client_id, spawn_x):
+        with self.db_lock:
+            c = self.conn.cursor()
+            c.execute('''
+            UPDATE clients SET
+                spawn_x=?
+            WHERE id=?
+            ''', (spawn_x, client_id))
             self.conn.commit()
 
     def add_items(self, client_id, items):
