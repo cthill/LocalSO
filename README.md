@@ -13,7 +13,7 @@ Requirements:
 On Windows, run `start_server.cmd` and complete the first time setup:
 
 ```
-02-03-18 16:24:24 root         INFO     LocalSO v1.2
+02-03-18 16:24:24 root         INFO     LocalSO v1.3
 02-03-18 16:24:24 db           INFO     Connected to database data/stickonline.db
 02-03-18 16:24:24 db           INFO     Performing first time setup.
 02-03-18 16:24:24 db           INFO     Creating database tables...
