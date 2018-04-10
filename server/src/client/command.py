@@ -45,7 +45,7 @@ class Command:
             client.logger.info('usage error "!%s": %s' % (' '.join(tokens), str(e)))
             if len(str(e)) > 0:
                 _send_chat_response(client, 'Error: %s' % str(e))
-            _send_chat_response(client, ' - Usage: %s' % self)
+            _send_chat_response(client, 'Usage: %s' % self)
 
     def __str__(self):
         return '!%s %s' % (self.name, self.arg_str)
