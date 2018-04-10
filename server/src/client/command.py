@@ -45,7 +45,7 @@ class Command:
             client.logger.info('usage error "!%s": %s' % (' '.join(tokens), str(e)))
             if len(str(e)) > 0:
                 _send_chat_response(client, 'Error: %s' % str(e))
-            _send_chat_response(client, 'Usage: %s' % self)
+            _send_chat_response(client, ' - Usage: %s' % self)
 
     def __str__(self):
         return '!%s %s' % (self.name, self.arg_str)
@@ -154,6 +154,18 @@ def _cmd_level(client, tokens):
 def _cmd_godmode(client, tokens):
     client.god_mode = not client.god_mode
     _send_chat_response(client, 'godmode is %s.' % ('on' if client.god_mode else 'off'))
+
+def _cmd_setspawn(client, tokens):
+    if len(tokens) == 1:
+        raise UsageError('missing location_num.')
+
+    location_num = int(tokens[1])
+    if location_num < 1 or location_num > len(config.PLAYER_SPAWN):
+        raise UsageError('invalid location_num. Must be 1 to %s.' % len(config.PLAYER_SPAWN))
+
+    spawn_data = config.PLAYER_SPAWN[location_num]
+    client.set_spawn_x_on_disconnect = spawn_data['x']
+    client.kick_with_reason('Spawn point set to: %s. You will now be disconnected.' % spawn_data['name'])
 
 
 # admin commands
@@ -362,6 +374,7 @@ COMMANDS = [
     Command('item', _cmd_item, arg_str='<item_id>', max_args=1, description='Obtain an item of id (1 to 72).', admin=False),
     Command('level', _cmd_level, arg_str='<level>', max_args=1, description='Set level (will reset stats).', admin=False),
     Command('godmode', _cmd_godmode, arg_str='', max_args=0, description='Toggle godmode.', admin=False),
+    Command('setspawn', _cmd_setspawn, arg_str='<location_num>', max_args=1, description='Set spawn point to location (1 to %s).' % len(config.PLAYER_SPAWN), admin=False),
     # admin commands
     Command('spawn', _cmd_spawn, arg_str='<mob_id> [amount]', max_args=2, description='Spawn mob(s) of given id (0 to 18).', admin=True),
     Command('spawnall', _cmd_spawnall, arg_str='[amount]', max_args=1, description='Spawn all mobs.', admin=True),
