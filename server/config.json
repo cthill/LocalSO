@@ -3,14 +3,14 @@
     "interface_http": "0.0.0.0",
     "port_http": 80,
     "mob_spawn_rate_multiplier": 2.0,
-    "mob_spawn_count_max_multiplier": 2.0,
+    "mob_spawn_count_max_multiplier": 1.0,
     "mob_spawn_chance_boss_multiplier": 2.0,
     "mob_spawn_chance_bunny_multiplier": 1.0,
     "player_damage_multiplier": 2.0,
     "player_start_gold": 500,
 
-    "ingame_motd": "Welcome to LocalSO (BETA)! Current rates are 2x spawn rate, 2x mob count, and 2x player damage.",
-    "menu_motd": "Welcome to LocalSO (BETA)! Current rates are 2x spawn rate, 2x mob count, and 2x player damage.",
+    "ingame_motd": "Welcome to LocalSO! Current rates are 2x spawn rate and 2x player damage.",
+    "menu_motd": "Welcome to LocalSO! Current rates are 2x spawn rate and 2x player damage.",
 
     "register_closed": false,
     "sqlite_db_file": "data/stickonline.db",

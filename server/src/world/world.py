@@ -28,14 +28,13 @@ class WorldSection:
 
 
 class World(Mailbox):
-    def __init__(self, game_server, event_scheduler):
+    def __init__(self, game_server):
         super(World, self).__init__()
 
-        self.log = logging.getLogger('world')
+        self.logger = logging.getLogger('world')
 
         self.running = True
         self.game_server = game_server
-        self.event_scheduler = event_scheduler
 
         # read only data that does not need locks
         self.solid_blocks = []
@@ -93,10 +92,6 @@ class World(Mailbox):
             spawner_data = config.MOB_SPAWN[i]
             new_spawner = MobSpawner(i, spawner_data, self.game_server, self)
             self.mob_spawn.append(new_spawner)
-
-
-    def get_event_scheduler(self):
-        return self.event_scheduler
 
     def find_section_index(self, x):
         if x < 0:
@@ -157,7 +152,7 @@ class World(Mailbox):
                     time_to_wait = 0
                 time.sleep(time_to_wait)
         except Exception as e:
-            self.log.error('Unhandled exception in world %s' % (e))
+            self.logger.error('Unhandled exception in world %s' % (e))
             traceback.print_exc()
         finally:
             self.running = False
