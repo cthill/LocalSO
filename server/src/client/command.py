@@ -45,7 +45,7 @@ class Command:
             client.logger.info('usage error "!%s": %s' % (' '.join(tokens), str(e)))
             if len(str(e)) > 0:
                 _send_chat_response(client, 'Error: %s' % str(e))
-            _send_chat_response(client, 'Usage: %s' % self)
+            _send_chat_response(client, ' - Usage: %s' % self)
 
     def __str__(self):
         return '!%s %s' % (self.name, self.arg_str)
@@ -161,7 +161,7 @@ def _cmd_setspawn(client, tokens):
 
     location_num = int(tokens[1])
     if location_num < 1 or location_num > len(config.PLAYER_SPAWN):
-        raise UsageError('invalid location_num')
+        raise UsageError('invalid location_num. Must be 1 to %s.' % len(config.PLAYER_SPAWN))
 
     spawn_data = config.PLAYER_SPAWN[location_num]
     client.set_spawn_x_on_disconnect = spawn_data['x']
