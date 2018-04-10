@@ -58,6 +58,7 @@ class Client(Mailbox):
 
         self.add_items_on_disconnect = LockList()
         self.set_stats_on_disconnect = None
+        self.set_spawn_x_on_disconnect = None
 
     def send_tcp_message(self, data):
         self.send_mail_message(mail_header.MSG_CLIENT_SEND_TCP, data)
@@ -170,6 +171,10 @@ class Client(Mailbox):
         if self.set_stats_on_disconnect is not None:
             self.logger.info('setting stats %s' % self.set_stats_on_disconnect)
             self.game_server.stick_online_server.db.set_stats(self.id, self.set_stats_on_disconnect)
+
+        if self.set_spawn_x_on_disconnect is not None:
+            self.logger.info('setting spawn_x %s' % self.set_spawn_x_on_disconnect)
+            self.game_server.stick_online_server.db.set_spawn_x(self.id, self.set_spawn_x_on_disconnect)
 
     def disconnect(self):
         self.terminated = True
