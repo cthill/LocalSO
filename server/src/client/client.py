@@ -6,6 +6,7 @@ import traceback
 
 import command
 import config
+from event import scheduler
 from net import packet
 from world.bounding_box import BoundingBox
 from mailbox import mail_header
@@ -13,14 +14,14 @@ from mailbox import Mailbox
 from world.mob import Mob
 from net.buffer import *
 from net.socket import tcp_write
-from util import buff_to_str, dist
+from util import buff_to_str, dist, LockList
 
 class Client(Mailbox):
 
     def __init__(self, game_server, world, socket, id, client_data):
         super(Client, self).__init__()
 
-        self.log = logging.getLogger('C%s' % id)
+        self.logger = logging.getLogger('C%s' % id)
 
         # setup params
         self.game_server = game_server
@@ -55,10 +56,9 @@ class Client(Mailbox):
 
         self.last_recv_timestamp = datetime.now()
 
-        # write player id
-        buff = []
-        write_ushort(buff, self.id)
-        self.send_tcp_message(buff)
+        self.add_items_on_disconnect = LockList()
+        self.set_stats_on_disconnect = None
+        self.set_spawn_x_on_disconnect = None
 
     def send_tcp_message(self, data):
         self.send_mail_message(mail_header.MSG_CLIENT_SEND_TCP, data)
@@ -77,21 +77,30 @@ class Client(Mailbox):
         t = threading.Thread(target=self._recv_thread)
         t.start()
 
+        # write player id
+        buff = []
+        write_ushort(buff, self.id)
+        self.send_tcp_message(buff)
+
         # write number of players online
         buff = [packet.RESP_NUM_PLAYERS]
         write_ushort(buff, self.game_server.get_num_players())
         self.send_tcp_message(buff)
 
         buff = [packet.RESP_CHAT]
+        write_string(buff, '%s connected.' % self.name)
+        write_byte(buff, 2)
+        self.game_server.broadcast(buff, exclude=self)
+
+        buff = [packet.RESP_CHAT]
         write_string(buff, config.INGAME_MOTD)
         write_byte(buff, 2)
         self.send_tcp_message(buff)
 
-        if self.admin == 250:
-            buff = [packet.RESP_CHAT]
-            write_string(buff, 'Type !help for a list of admin commands.')
-            write_byte(buff, 1)
-            self.send_tcp_message(buff)
+        buff = [packet.RESP_CHAT]
+        write_string(buff, 'Type !help for a list of %s commands.' % ('admin' if self.admin == 250 else 'player'))
+        write_byte(buff, 1)
+        self.send_tcp_message(buff)
 
     def _send_thread(self):
         try:
@@ -104,7 +113,7 @@ class Client(Mailbox):
 
         except Exception as e:
             if not self.terminated:
-                self.log.error('Unhandled exception send_thread %s' % (e))
+                self.logger.error('Unhandled exception send_thread %s' % (e))
                 traceback.print_exc()
         finally:
             try:
@@ -133,7 +142,7 @@ class Client(Mailbox):
 
         except Exception as e:
             if not self.terminated:
-                self.log.error('Unhandled exception recv_thread %s' % (e))
+                self.logger.error('Unhandled exception recv_thread %s' % (e))
                 traceback.print_exc()
         finally:
             try:
@@ -148,7 +157,24 @@ class Client(Mailbox):
             self.world.client_disconnect(self)
             self.game_server.client_disconnect(self)
             self.socket.close()
-            self.log.info('disconnected')
+            self.logger.info('disconnected')
+
+            # wait 5 seconds so the client has time to save and disconnect
+            # HACK: using a delay to win a race condition
+            scheduler.schedule_event(self._post_disconnect_event, 5)
+
+    def _post_disconnect_event(self):
+        if len(self.add_items_on_disconnect) > 0:
+            self.logger.info('adding items %s' % self.add_items_on_disconnect)
+            self.game_server.stick_online_server.db.add_items(self.id, self.add_items_on_disconnect)
+
+        if self.set_stats_on_disconnect is not None:
+            self.logger.info('setting stats %s' % self.set_stats_on_disconnect)
+            self.game_server.stick_online_server.db.set_stats(self.id, self.set_stats_on_disconnect)
+
+        if self.set_spawn_x_on_disconnect is not None:
+            self.logger.info('setting spawn_x %s' % self.set_spawn_x_on_disconnect)
+            self.game_server.stick_online_server.db.set_spawn_x(self.id, self.set_spawn_x_on_disconnect)
 
     def disconnect(self):
         self.terminated = True
@@ -159,7 +185,7 @@ class Client(Mailbox):
 
     def _handle_packet(self, data):
         self.last_recv_timestamp = datetime.now()
-        self.log.debug('data: %s' % (buff_to_str(data)))
+        self.logger.debug('data: %s' % (buff_to_str(data)))
 
         header = data[0]
         if header == packet.MSG_INIT:
@@ -229,7 +255,7 @@ class Client(Mailbox):
             offset += len(message) + 1
             chat_type = read_byte(data, offset)
 
-            if self.admin == 0xfa and message.strip().startswith('!'):
+            if message.strip().startswith('!'):
                 command.handle_admin_command(self, message)
                 return
 
@@ -262,7 +288,7 @@ class Client(Mailbox):
 
         elif header == packet.MSG_CLIENT_ERROR:
             error_code = read_short(data, 2)
-            self.log.info('error code from client %s' % (error_code))
+            self.logger.info('error code from client %s' % (error_code))
             # TODO: write to an error log
 
         elif header == packet.MSG_HAT_CHANGE:
@@ -294,10 +320,8 @@ class Client(Mailbox):
             mob_type = read_ushort(data, 3)
             x = read_uint(data, 5) / 10.0
             y = read_short(data, 9) / 10.0
-            # self.log.info('Client %s wants to spawn %s at (%s,%s)' % (self, mob_type, x, y))
-
-            new_mob = Mob(self.world.generate_mob_id(), mob_type, x, y, None, self.world)
-            self.world.send_mail_message(mail_header.MSG_ADD_MOB, new_mob)
+            # self.logger.info('Client %s wants to spawn %s at (%s,%s)' % (self, mob_type, x, y))
+            self.world.send_mail_message(mail_header.MSG_ADD_MOB, (mob_type, x, y, None, self.world))
 
         elif header == packet.MSG_LEVEL_UP:
             new_level = read_byte(data, 2)
@@ -308,7 +332,7 @@ class Client(Mailbox):
             self.game_server.broadcast(buff)
 
         else:
-            self.log.info('unknown packet %s' % (buff_to_str(data)))
+            self.logger.info('unknown packet %s' % (buff_to_str(data)))
 
     def write_full_client_data(self, buff):
         write_ushort(buff, self.id) # id
@@ -365,18 +389,18 @@ class Client(Mailbox):
             self.y = min_touching_y - config.PLAYER_MASK_HEIGHT - config.PLAYER_OFFSET_Y
             self.y_speed = 0
         else:
-            bottom_sliver_bbox = BoundingBox(int(round(self.x)) - config.PLAYER_OFFSET_X, int(round(self.y)) - config.PLAYER_OFFSET_Y + config.PLAYER_MASK_HEIGHT - 1, config.PLAYER_MASK_WIDTH, 1)
+            sliver_height = config.WORLD_TERMINAL_VELOCITY + 1
+            bottom_sliver_bbox = BoundingBox(int(round(self.x)) - config.PLAYER_OFFSET_X, int(round(self.y)) - config.PLAYER_OFFSET_Y + config.PLAYER_MASK_HEIGHT - sliver_height, config.PLAYER_MASK_WIDTH, sliver_height)
             touching_jump_through = self.world.get_jump_through_blocks_at(bottom_sliver_bbox)
-            if len(touching_jump_through) > 0:
+            if len(touching_jump_through) > 0 and self.y_speed > 0:
                 min_touching_y = config.WORLD_HEIGHT
 
                 for jump_through_block in touching_jump_through:
                     if jump_through_block.y < min_touching_y:
                         min_touching_y = jump_through_block.y
 
-                if self.y_speed > 0:
-                    self.y = min_touching_y - config.PLAYER_MASK_HEIGHT - config.PLAYER_OFFSET_Y
-                    self.y_speed = 0
+                self.y = min_touching_y - config.PLAYER_MASK_HEIGHT - config.PLAYER_OFFSET_Y
+                self.y_speed = 0
 
         if self.invincible_frames > 0:
             self.invincible_frames -= 1
@@ -386,7 +410,7 @@ class Client(Mailbox):
         write_string(buff, reason)
         write_byte(buff, 1)
         self.send_tcp_message(buff)
-        self.world.event_scheduler.schedule_event(self.disconnect, 5)
+        scheduler.schedule_event(self.disconnect, 5)
 
     def handle_udp_packet(self, data):
         self.last_recv_timestamp = datetime.now()
@@ -426,7 +450,7 @@ class Client(Mailbox):
                 self.send_tcp_message(buff)
 
         except Exception as e:
-            self.log.error('Unhandled exception handle_udp %s' % (e))
+            self.logger.error('Unhandled exception handle_udp %s' % (e))
             traceback.print_exc()
 
     def __str__(self):
