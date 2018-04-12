@@ -59,6 +59,7 @@ class Client(Mailbox):
         self.add_items_on_disconnect = LockList()
         self.set_stats_on_disconnect = None
         self.set_spawn_x_on_disconnect = None
+        self.reset_stats_on_disconnect = None
 
     def send_tcp_message(self, data):
         self.send_mail_message(mail_header.MSG_CLIENT_SEND_TCP, data)
@@ -176,6 +177,10 @@ class Client(Mailbox):
             self.logger.info('setting spawn_x %s' % self.set_spawn_x_on_disconnect)
             self.game_server.stick_online_server.db.set_spawn_x(self.id, self.set_spawn_x_on_disconnect)
 
+        if self.reset_stats_on_disconnect:
+            self.logger.info('resetting stats')
+            self.game_server.stick_online_server.db.reset_stats(self.id)
+
     def disconnect(self):
         self.terminated = True
         try:
@@ -256,7 +261,7 @@ class Client(Mailbox):
             chat_type = read_byte(data, offset)
 
             if message.strip().startswith('!'):
-                command.handle_admin_command(self, message)
+                command.process_command(self, message)
                 return
 
             buff = [packet.RESP_CHAT]
