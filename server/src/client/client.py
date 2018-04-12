@@ -4,8 +4,8 @@ from datetime import datetime
 import socket
 import traceback
 
+import command
 import config
-from command import process_command
 from event import scheduler
 from net import packet
 from world.bounding_box import BoundingBox
@@ -261,7 +261,7 @@ class Client(Mailbox):
             chat_type = read_byte(data, offset)
 
             if message.strip().startswith('!'):
-                process_command(self, message)
+                command.process_command(self, message)
                 return
 
             buff = [packet.RESP_CHAT]
