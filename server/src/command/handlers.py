@@ -74,7 +74,7 @@ def cmd_level(client, tokens):
         raise CommandError('level must be between 1 and %s' % (255 if client.admin == 250 else 100))
 
     new_stats = {}
-    if not client.admin:
+    if client.admin != 250 :
         new_stats['level'] = level
         new_stats['stat_str'] = 1
         new_stats['stat_agi'] = 1
