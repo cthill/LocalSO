@@ -35,7 +35,7 @@ COMMANDS = [
 
     # tier 250 (gm) commands
     Command('setadmin', handlers.cmd_setadmin, arg_str='<name> <level>', max_args=2, description='Change player admin status (0 to 250).', min_admin_level=250),
-    Command('crashworld', handlers.cmd_crashworld, arg_str='', max_args=0, description='Crash world thread.', min_admin_level=250),
+    # Command('crashworld', handlers.cmd_crashworld, arg_str='', max_args=0, description='Crash world thread.', min_admin_level=250),
 ]
 CMD_DICT = { cmd.name:cmd for cmd in COMMANDS }
 
