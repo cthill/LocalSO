@@ -362,6 +362,16 @@ class Client(Mailbox):
         self.x = x
         self.y = y
 
+        if self.x < 0:
+            self.x = 0
+        elif self.x >= config.WORLD_WIDTH:
+            self.x = config.WORLD_WIDTH - 1
+
+        if self.y < 0:
+            self.y = 0
+        elif self.y - config.PLAYER_OFFSET_Y > config.WORLD_HEIGHT + 300:
+            self.y = config.PLAYER_OFFSET_Y + config.WORLD_HEIGHT + 300
+
         old_section = self.section
         new_section = self.world.find_section_index(int(round(x)))
 
@@ -380,6 +390,8 @@ class Client(Mailbox):
 
         self.x += self.x_speed
         self.y += self.y_speed
+
+        self.update_position(self.x, self.y)
 
         bbox = self.get_bbox()
         touching = self.world.get_solid_blocks_at(bbox)

@@ -96,15 +96,15 @@ class World(Mailbox):
     def find_section_index(self, x):
         if x < 0:
             return 0
-        elif x > config.WORLD_WIDTH:
+        elif x >= config.WORLD_WIDTH:
             return config.NUM_SECTIONS - 1
 
-        return x // config.WORLD_SECTION_WIDTH
+        return int(x // config.WORLD_SECTION_WIDTH)
 
     def _find_section_range(self, bbox):
         origin_section = self.find_section_index(bbox.x)
-        section_span = ceildiv((bbox.x % config.WORLD_SECTION_WIDTH) + bbox.w, config.WORLD_SECTION_WIDTH)
-        return (origin_section, origin_section + section_span)
+        end_section = self.find_section_index(bbox.x + bbox.w)
+        return (origin_section, end_section + 1)
 
     # This method modifies the section_to_clients dict and the active_sections
     # set and should not be called without first locking the dict and set.
