@@ -135,9 +135,10 @@ class World(Mailbox):
         return range(start, end)
 
     def __call__(self):
-        try:
-            target_frame_interval = 1.0/config.ROOM_SPEED
-            while True:
+        target_frame_interval = 1.0/config.ROOM_SPEED
+        consecutive_error_steps = 0
+        while self.running:
+            try:
                 step_start_timestamp = time.time()
                 self.world_step_tstamp = step_start_timestamp
 
@@ -151,11 +152,16 @@ class World(Mailbox):
                 if time_to_wait < 0:
                     time_to_wait = 0
                 time.sleep(time_to_wait)
-        except Exception as e:
-            self.logger.error('Unhandled exception in world %s' % (e))
-            traceback.print_exc()
-        finally:
-            self.running = False
+                consecutive_error_steps = 0
+            except Exception as e:
+                self.logger.error('Unhandled exception in world step %s: %s' % (self.world_step_num, e))
+                traceback.print_exc()
+                consecutive_error_steps += 1
+                if consecutive_error_steps > config.WORLD_MAX_ERROR_STEPS:
+                    self.logger.error('More than %s consecutive error steps, terminating world thread...' % (config.WORLD_MAX_ERROR_STEPS))
+                    self.running = False
+                else:
+                    self.logger.info('Continuing, consecutive_error_steps=%s', consecutive_error_steps)
 
     def _process_mail_messages(self):
         # check the mailbox
@@ -181,6 +187,9 @@ class World(Mailbox):
 
             elif header == mail_header.UPDATE_CLIENT_SECTION:
                 self._update_client_section(*payload)
+
+            elif header == mail_header.MSG_POISON_PILL:
+                raise Exception('Got poison pill')
 
     def _step(self):
         self._process_mail_messages()
@@ -218,7 +227,6 @@ class World(Mailbox):
         for client in self.game_server.clients:
             # then get the client's nearby sections
             local_sections = self.get_local_sections(client.section)
-            # if self.world_step_num % 1 == 0:
             for section in local_sections:
                 # find all the mobs in the nearby section
                 for mob in self.section_to_mobs.get(section, []):
@@ -315,4 +323,9 @@ class World(Mailbox):
         # lock the dict
         with self.section_to_clients:
             if client.section in self.section_to_clients:
-                self.section_to_clients[client.section].remove(client)
+                if client in self.section_to_clients[client.section]:
+                    self.section_to_clients[client.section].remove(client)
+                else:
+                    self.logger.warn('client_disconnect unknown client %s', client)
+            else:
+                self.logger.warn('client_disconnect unknown section %s', client.section)

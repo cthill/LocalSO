@@ -1,4 +1,5 @@
 import config
+from mailbox import mail_header
 from util import CommandError, UsageError, _send_chat_response, _spawn, _send_public_chat
 
 def cmd_help(client, tokens):
@@ -285,3 +286,8 @@ def cmd_setadmin(client, tokens):
         # that the player's admin status has changed. So we must disconnect
         # them and write to the db while they are disconnected
         target_client_obj.kick_with_reason('There has been a change to your admin status. You will now be disconnected.')
+
+
+def cmd_crashworld(client, tokens):
+    client.world.send_mail_message(mail_header.MSG_POISON_PILL, None)
+    _send_chat_response(client, 'crashed world thread')
