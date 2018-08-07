@@ -1,44 +1,45 @@
 import config
 import handlers
+from bitmask import *
 from util import Command, CommandError, UsageError, _send_chat_response, _unknown_cmd, _cmd_error
 
 # register commands
 COMMANDS = [
-    # tier 0 (player) commands
-    Command('help', handlers.cmd_help, arg_str='[cmd_name]', max_args=1, description='Display a help menu.', min_admin_level=0),
-    Command('statreset', handlers.cmd_statreset, arg_str='', max_args=0, description='Reset all stats.', min_admin_level=0),
-    Command('setspawn', handlers.cmd_setspawn, arg_str='<location_num>', max_args=1, description='Set spawn point to location (1 to %s).' % len(config.PLAYER_SPAWN), min_admin_level=0),
+    # Unrestricted commands
+    Command('help', handlers.cmd_help, arg_str='[cmd_name]', max_args=1, description='Display a help menu.', bitmask=BITMASK_ALL),
+    Command('statreset', handlers.cmd_statreset, arg_str='', max_args=0, description='Reset all stats.', bitmask=BITMASK_ALL),
+    Command('setspawn', handlers.cmd_setspawn, arg_str='<location_num>', max_args=1, description='Set spawn point to location (1 to %s).' % len(config.PLAYER_SPAWN), bitmask=BITMASK_ALL),
 
-    # tier 190 commands
-    Command('item', handlers.cmd_item, arg_str='<item_id>', max_args=1, description='Obtain an item of id (1 to 72).', min_admin_level=190),
-    Command('godmode', handlers.cmd_godmode, arg_str='', max_args=0, description='Toggle godmode.', min_admin_level=190),
+    # Group 1 commands (self-effecting 1)
+    Command('item', handlers.cmd_item, arg_str='<item_id>', max_args=1, description='Obtain an item of id (1 to 72).', bitmask=BITMASK_GROUP_1),
+    Command('godmode', handlers.cmd_godmode, arg_str='', max_args=0, description='Toggle godmode.', bitmask=BITMASK_GROUP_1),
 
-    # tier 200
-    Command('level', handlers.cmd_level, arg_str='<level>', max_args=1, description='Set level (will reset stats).', min_admin_level=200),
+    # Group 2 commands (self-effecting 2)
+    Command('level', handlers.cmd_level, arg_str='<level>', max_args=1, description='Set level (will reset stats).', bitmask=BITMASK_GROUP_2),
 
-    # tier 210 commands
-    Command('spawn', handlers.cmd_spawn, arg_str='<mob_id> [amount]', max_args=2, description='Spawn mob(s) of given id (0 to 18).', min_admin_level=210),
-    Command('spawnall', handlers.cmd_spawnall, arg_str='[amount]', max_args=1, description='Spawn all mobs.', min_admin_level=210),
-    Command('hurt', handlers.cmd_hurt, arg_str='', max_args=0, description='Set nearby mobs to 1 hp.', min_admin_level=210),
-    Command('kill', handlers.cmd_kill, arg_str='', max_args=0, description='Kill nearby mobs.', min_admin_level=210),
+    # Group 3 commands (local-effecting)
+    Command('spawn', handlers.cmd_spawn, arg_str='<mob_id> [amount]', max_args=2, description='Spawn mob(s) of given id (0 to 18).', bitmask=BITMASK_GROUP_3),
+    Command('spawnall', handlers.cmd_spawnall, arg_str='[amount]', max_args=1, description='Spawn all mobs.', bitmask=BITMASK_GROUP_3),
+    Command('hurt', handlers.cmd_hurt, arg_str='', max_args=0, description='Set nearby mobs to 1 hp.', bitmask=BITMASK_GROUP_3),
+    Command('kill', handlers.cmd_kill, arg_str='', max_args=0, description='Kill nearby mobs.', bitmask=BITMASK_GROUP_3),
 
-    # tier 220 commands
-    Command('hurtall', handlers.cmd_hurtall, arg_str='', max_args=0, description='Set all mobs to 1 hp.', min_admin_level=220),
-    Command('killall', handlers.cmd_killall, arg_str='', max_args=0, description='Kill all mobs.', min_admin_level=220),
+    # Group 4 commands (world-effecting)
+    Command('hurtall', handlers.cmd_hurtall, arg_str='', max_args=0, description='Set all mobs to 1 hp.', bitmask=BITMASK_GROUP_4),
+    Command('killall', handlers.cmd_killall, arg_str='', max_args=0, description='Kill all mobs.', bitmask=BITMASK_GROUP_4),
 
-    # tier 230 commands
-    Command('kick', handlers.cmd_kick, arg_str='<name>', max_args=1, description='Kick a player.', min_admin_level=230),
+    # Group 5 commands (mod)
+    Command('kick', handlers.cmd_kick, arg_str='<name>', max_args=1, description='Kick a player.', bitmask=BITMASK_GROUP_5),
+    Command('ban', handlers.cmd_ban_unban, arg_str='<name>', max_args=1, description='Ban a player.', bitmask=BITMASK_GROUP_5),
+    Command('unban', handlers.cmd_ban_unban, arg_str='<name>', max_args=1, description='Unban a player.', bitmask=BITMASK_GROUP_5),
 
-    # tier 240 commands
-    Command('ban', handlers.cmd_ban_unban, arg_str='<name>', max_args=1, description='Ban a player.', min_admin_level=240),
-    Command('unban', handlers.cmd_ban_unban, arg_str='<name>', max_args=1, description='Unban a player.', min_admin_level=240),
-
-    # tier 250 (gm) commands
-    Command('setadmin', handlers.cmd_setadmin, arg_str='<name> <level>', max_args=2, description='Change player admin status (0 to 250).', min_admin_level=250),
-    # Command('crashworld', handlers.cmd_crashworld, arg_str='', max_args=0, description='Crash world thread.', min_admin_level=250),
+    # Admin commands
+    Command('setadmin', handlers.cmd_setadmin, arg_str='<name> <level>', max_args=2, description='Change player admin status (0 to 250).', bitmask=BITMASK_ADMIN),
+    Command('crashworld', handlers.cmd_crashworld, arg_str='', max_args=0, description='Crash world thread.', bitmask=BITMASK_ADMIN),
 ]
 CMD_DICT = { cmd.name:cmd for cmd in COMMANDS }
 
+def bitmask_is_admin(bitmask):
+    return bool(bitmask & BITMASK_ADMIN)
 
 def process_command(client, command_string):
     try:

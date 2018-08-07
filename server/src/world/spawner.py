@@ -5,6 +5,19 @@ import config
 from mailbox import mail_header
 from mob import Mob
 
+class ClientMobSpawner:
+    def __init__(self):
+        self.mobs = set()
+
+    def is_client_mob_spawner(self):
+        return True
+
+    def _add_mob(self, mob):
+        self.mobs.add(mob)
+
+    def _mob_death(self, mob):
+        self.mobs.remove(mob)
+
 class MobSpawner:
     def __init__(self, mob_spawn_id, spawner_data, game_server, world):
         self.mob_spawn_id = mob_spawn_id
@@ -62,8 +75,7 @@ class MobSpawner:
 
         # we can call this method directly because the spawners are run on the world thread
         self.world._add_mob(new_mob)
-        self.mobs.add(new_mob)
-        self.mob_id_counter += 1
+        self._add_mob(new_mob)
 
     def _generate_mob_id(self):
         new_mob_id = -1
@@ -73,6 +85,13 @@ class MobSpawner:
             if new_mob_id not in self.mobs:
                 break
         return new_mob_id
+
+    def is_client_mob_spawner(self):
+        return False
+
+    def _add_mob(self, new_mob):
+        self.mobs.add(new_mob)
+        self.mob_id_counter += 1
 
     def _mob_death(self, mob):
         self.mobs.remove(mob)
