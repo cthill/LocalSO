@@ -16,13 +16,12 @@ class UsageError(RuntimeError):
     pass
 
 class Command:
-    def __init__(self, name, handler, arg_str='', max_args=0, description='', bitmask=BITMASK_ADMIN): #min_admin_level=250):
+    def __init__(self, name, handler, arg_str='', max_args=0, description='', bitmask=BITMASK_ADMIN):
         self.name = name
         self.handler = handler
         self.arg_str = arg_str
         self.max_args = max_args
         self.description = description
-        # self.min_admin_level = min_admin_level
         self.bitmask = bitmask
 
     def handle(self, client, tokens):
