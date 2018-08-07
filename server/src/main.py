@@ -7,7 +7,7 @@ from util import SigHandler
 
 if __name__ == '__main__':
     logging.basicConfig(format='%(message)s', level=logging.INFO)
-    logging.info('LocalSO v1.3')
+    logging.info('LocalSO v1.4')
 
     server = server.StickOnlineServer()
     server.start()
