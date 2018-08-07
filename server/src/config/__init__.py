@@ -25,6 +25,9 @@ PLAYER_START_GOLD = config_json['player_start_gold']
 INGAME_MOTD = config_json['ingame_motd']
 MENU_MOTD = config_json['menu_motd']
 
+# max number of mobs non-admins can spawn at once (if they have access to the spawn cmds)
+NON_ADMIN_MAX_MOB_SPAWN = config_json['non_admin_max_mob_spawn']
+
 # registration parameters
 REGISTER_ILLEGAL_CHARACTERS = ' #/\\:*?<>|"'
 REGISTER_ILLEGAL_USERNAMES = ['meiun', 'danimal', 'seifer']
@@ -93,3 +96,4 @@ PLAYER_TIMEOUT = 10 # in seconds
 LOGIN_PENDING_TIMEOUT = 5 # in seconds
 WORLD_GRAVITY = 1
 WORLD_TERMINAL_VELOCITY = 14
+WORLD_MAX_ERROR_STEPS = 30

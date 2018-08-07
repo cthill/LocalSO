@@ -59,6 +59,7 @@ class Client(Mailbox):
         self.add_items_on_disconnect = LockList()
         self.set_stats_on_disconnect = None
         self.set_spawn_x_on_disconnect = None
+        self.reset_stats_on_disconnect = None
 
     def send_tcp_message(self, data):
         self.send_mail_message(mail_header.MSG_CLIENT_SEND_TCP, data)
@@ -176,6 +177,10 @@ class Client(Mailbox):
             self.logger.info('setting spawn_x %s' % self.set_spawn_x_on_disconnect)
             self.game_server.stick_online_server.db.set_spawn_x(self.id, self.set_spawn_x_on_disconnect)
 
+        if self.reset_stats_on_disconnect:
+            self.logger.info('resetting stats')
+            self.game_server.stick_online_server.db.reset_stats(self.id)
+
     def disconnect(self):
         self.terminated = True
         try:
@@ -256,7 +261,7 @@ class Client(Mailbox):
             chat_type = read_byte(data, offset)
 
             if message.strip().startswith('!'):
-                command.handle_admin_command(self, message)
+                command.process_command(self, message)
                 return
 
             buff = [packet.RESP_CHAT]
@@ -321,7 +326,7 @@ class Client(Mailbox):
             x = read_uint(data, 5) / 10.0
             y = read_short(data, 9) / 10.0
             # self.logger.info('Client %s wants to spawn %s at (%s,%s)' % (self, mob_type, x, y))
-            self.world.send_mail_message(mail_header.MSG_ADD_MOB, (mob_type, x, y, None, self.world))
+            self.world.send_mail_message(mail_header.MSG_ADD_MOB, (mob_type, x, y, self.get_mob_spawn(), self.world))
 
         elif header == packet.MSG_LEVEL_UP:
             new_level = read_byte(data, 2)
@@ -357,6 +362,16 @@ class Client(Mailbox):
         self.x = x
         self.y = y
 
+        if self.x < 0:
+            self.x = 0
+        elif self.x >= config.WORLD_WIDTH:
+            self.x = config.WORLD_WIDTH - 1
+
+        if self.y < 0:
+            self.y = 0
+        elif self.y - config.PLAYER_OFFSET_Y > config.WORLD_HEIGHT + 300:
+            self.y = config.PLAYER_OFFSET_Y + config.WORLD_HEIGHT + 300
+
         old_section = self.section
         new_section = self.world.find_section_index(int(round(x)))
 
@@ -375,6 +390,8 @@ class Client(Mailbox):
 
         self.x += self.x_speed
         self.y += self.y_speed
+
+        self.update_position(self.x, self.y)
 
         bbox = self.get_bbox()
         touching = self.world.get_solid_blocks_at(bbox)
@@ -411,6 +428,9 @@ class Client(Mailbox):
         write_byte(buff, 1)
         self.send_tcp_message(buff)
         scheduler.schedule_event(self.disconnect, 5)
+
+    def get_mob_spawn(self):
+        return self.world.get_client_mob_spawn(self)
 
     def handle_udp_packet(self, data):
         self.last_recv_timestamp = datetime.now()

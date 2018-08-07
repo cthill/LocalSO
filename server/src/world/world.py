@@ -9,7 +9,7 @@ from net import packet
 from bounding_box import BoundingBox
 from mailbox import Mailbox
 from mob import Mob
-from spawner import MobSpawner
+from spawner import MobSpawner, ClientMobSpawner
 from net.buffer import *
 from util import ceildiv, LockDict, LockSet, acquire_all
 
@@ -43,10 +43,11 @@ class World(Mailbox):
         self.mob_spawn = []
 
         # mutable data that needs locks
-        self.mobs = LockDict() # Done!
-        self.section_to_clients = LockDict() # Done!
-        self.section_to_mobs = LockDict() # Done!
-        self.active_sections = LockSet() # Done!
+        self.mobs = LockDict()
+        self.section_to_clients = LockDict()
+        self.section_to_mobs = LockDict()
+        self.active_sections = LockSet()
+        self.client_mob_spawn = LockDict()
 
         self.mob_id_gen_counter = 0
         self.world_step_num = 0
@@ -96,15 +97,15 @@ class World(Mailbox):
     def find_section_index(self, x):
         if x < 0:
             return 0
-        elif x > config.WORLD_WIDTH:
+        elif x >= config.WORLD_WIDTH:
             return config.NUM_SECTIONS - 1
 
-        return x // config.WORLD_SECTION_WIDTH
+        return int(x // config.WORLD_SECTION_WIDTH)
 
     def _find_section_range(self, bbox):
         origin_section = self.find_section_index(bbox.x)
-        section_span = ceildiv((bbox.x % config.WORLD_SECTION_WIDTH) + bbox.w, config.WORLD_SECTION_WIDTH)
-        return (origin_section, origin_section + section_span)
+        end_section = self.find_section_index(bbox.x + bbox.w)
+        return (origin_section, end_section + 1)
 
     # This method modifies the section_to_clients dict and the active_sections
     # set and should not be called without first locking the dict and set.
@@ -135,14 +136,15 @@ class World(Mailbox):
         return range(start, end)
 
     def __call__(self):
-        try:
-            target_frame_interval = 1.0/config.ROOM_SPEED
-            while True:
+        target_frame_interval = 1.0/config.ROOM_SPEED
+        consecutive_error_steps = 0
+        while self.running:
+            try:
                 step_start_timestamp = time.time()
                 self.world_step_tstamp = step_start_timestamp
 
                 with acquire_all(self.mobs, self.section_to_clients, self.section_to_mobs,
-                                 self.active_sections, self.game_server.clients):
+                                 self.active_sections, self.game_server.clients, self.client_mob_spawn):
                     self._step()
 
                 # compute time to next frame
@@ -151,11 +153,16 @@ class World(Mailbox):
                 if time_to_wait < 0:
                     time_to_wait = 0
                 time.sleep(time_to_wait)
-        except Exception as e:
-            self.logger.error('Unhandled exception in world %s' % (e))
-            traceback.print_exc()
-        finally:
-            self.running = False
+                consecutive_error_steps = 0
+            except Exception as e:
+                self.logger.error('Unhandled exception in world step %s: %s' % (self.world_step_num, e))
+                traceback.print_exc()
+                consecutive_error_steps += 1
+                if consecutive_error_steps > config.WORLD_MAX_ERROR_STEPS:
+                    self.logger.error('More than %s consecutive error steps, terminating world thread...' % (config.WORLD_MAX_ERROR_STEPS))
+                    self.running = False
+                else:
+                    self.logger.info('Continuing, consecutive_error_steps=%s', consecutive_error_steps)
 
     def _process_mail_messages(self):
         # check the mailbox
@@ -171,7 +178,11 @@ class World(Mailbox):
 
             elif header == mail_header.MSG_ADD_MOB:
                 mob_id = self._generate_mob_id()
-                self._add_mob(Mob(mob_id, payload[0], payload[1], payload[2], payload[3], self))
+                mob_type, mob_x, mob_y, mob_spawner = payload
+                new_mob = Mob(mob_id, mob_type, mob_x, mob_y, mob_spawner, self)
+                if mob_spawner:
+                    mob_spawner._add_mob(new_mob)
+                self._add_mob(new_mob)
 
             elif header == mail_header.MSG_DELETE_MOB:
                 self._remove_mob(payload)
@@ -181,6 +192,9 @@ class World(Mailbox):
 
             elif header == mail_header.UPDATE_CLIENT_SECTION:
                 self._update_client_section(*payload)
+
+            elif header == mail_header.MSG_POISON_PILL:
+                raise Exception('Got poison pill')
 
     def _step(self):
         self._process_mail_messages()
@@ -218,7 +232,6 @@ class World(Mailbox):
         for client in self.game_server.clients:
             # then get the client's nearby sections
             local_sections = self.get_local_sections(client.section)
-            # if self.world_step_num % 1 == 0:
             for section in local_sections:
                 # find all the mobs in the nearby section
                 for mob in self.section_to_mobs.get(section, []):
@@ -282,6 +295,14 @@ class World(Mailbox):
         return nearest
 
     def _generate_mob_id(self):
+        '''
+        Mob ID's in StickOnline are a 16 bit number.
+        LocalSO uses the upper 6 bits of the ID designate the spawner ID.
+        The lower 10 bits are the mob's unique ID within that spawner.
+        This allows a maximum of 1024 mobs per spawner.
+        Attempting to spawn more than 1024 mobs per spawner will cause mobs to be overwritten and disappear.
+        Spawner ID 0b111111 is reserved for all mobs spawned by players.
+        '''
         new_id = (0b111111 << 10) | (self.mob_id_gen_counter % 1024)
         self.mob_id_gen_counter += 1
         return new_id
@@ -311,8 +332,19 @@ class World(Mailbox):
 
                 client.send_tcp_message(data)
 
+    def get_client_mob_spawn(self, client):
+        with self.client_mob_spawn:
+            if not self.client_mob_spawn.get(client.id):
+                self.client_mob_spawn[client.id] = ClientMobSpawner()
+            return self.client_mob_spawn[client.id]
+
     def client_disconnect(self, client):
         # lock the dict
         with self.section_to_clients:
             if client.section in self.section_to_clients:
-                self.section_to_clients[client.section].remove(client)
+                if client in self.section_to_clients[client.section]:
+                    self.section_to_clients[client.section].remove(client)
+                else:
+                    self.logger.warn('client_disconnect unknown client %s', client)
+            else:
+                self.logger.warn('client_disconnect unknown section %s', client.section)

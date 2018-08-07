@@ -292,8 +292,8 @@ class Mob():
             self.x += self.xspeed
             if self.x < 0:
                 self.x = 0
-            elif self.x > config.WORLD_WIDTH:
-                self.x = config.WORLD_WIDTH
+            elif self.x >= config.WORLD_WIDTH:
+                self.x = config.WORLD_WIDTH - 1
         else:
             self.xspeed = 0
 

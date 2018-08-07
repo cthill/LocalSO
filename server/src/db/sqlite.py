@@ -190,10 +190,10 @@ class SQLiteDB:
             c.execute('UPDATE clients SET banned=? WHERE id=?', (1 if banned else 0, client_id))
             self.conn.commit()
 
-    def set_admin_client(self, client_id, admin):
+    def set_admin_client(self, client_id, admin_level):
         with self.db_lock:
             c = self.conn.cursor()
-            c.execute('UPDATE clients SET admin_level=? WHERE id=?', (250 if admin else 0, client_id))
+            c.execute('UPDATE clients SET admin_level=? WHERE id=?', (admin_level, client_id))
             self.conn.commit()
 
     def set_stats(self, client_id, stats):
@@ -219,6 +219,29 @@ class SQLiteDB:
             WHERE id=?
             ''', vals)
             self.conn.commit()
+
+    def reset_stats(self, client_id):
+        with self.db_lock:
+            # lookup current client data in db
+            c = self.conn.cursor()
+            c.execute('SELECT * FROM clients WHERE id=?', (client_id,))
+            db_client = c.fetchone()
+            if db_client:
+                # compute stat points and update the db row
+                stat_points = db_client['level'] - 1
+                if db_client['level'] == 100:
+                    stat_points += 4
+                vals = (1, 1, 1, 1, stat_points, client_id)
+                c.execute('''
+                UPDATE clients SET
+                    stat_str=?,
+                    stat_agi=?,
+                    stat_int=?,
+                    stat_vit=?,
+                    stat_points=?
+                WHERE id=?
+                ''', vals)
+                self.conn.commit()
 
     def set_spawn_x(self, client_id, spawn_x):
         with self.db_lock:

@@ -12,6 +12,8 @@
     "ingame_motd": "Welcome to LocalSO! Current rates are 2x spawn rate and 2x player damage.",
     "menu_motd": "Welcome to LocalSO! Current rates are 2x spawn rate and 2x player damage.",
 
+    "non_admin_max_mob_spawn": 25,
+
     "register_closed": false,
     "sqlite_db_file": "data/stickonline.db",
     "sqlite_db_init_file": "data/init.sql",
