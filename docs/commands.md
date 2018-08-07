@@ -50,7 +50,7 @@ BITMASK_ADMIN   = 0b10000000
 ```
 
 Admin Level | Unrestricted Commands | Group 1 | Group 2 | Group 3 | Group 4 | Group 5 | Admin Commands
----|---|---|---|---|---|---
+---|---|---|---|---|---|---|---
 0|✔️|-|-|-|-|-|-
 2|✔️|✔️|-|-|-|-|-
 8|✔️|-|✔️|-|-|-|-
