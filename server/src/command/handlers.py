@@ -293,7 +293,7 @@ def cmd_setadmin(client, tokens):
         # the client application has no way for the server to indicate
         # that the player's admin status has changed. So we must disconnect
         # them and write to the db while they are disconnected
-        target_client_obj.kick_with_reason('There has been a change to your admin status. You will now be disconnected.')
+        target_client_obj.kick_with_reason('There has been a change to your player command access. You will now be disconnected.')
 
 
 def cmd_crashworld(client, tokens):
