@@ -181,8 +181,6 @@ class World(Mailbox):
                 mob_type, mob_x, mob_y, mob_spawner = payload
                 new_mob = Mob(mob_id, mob_type, mob_x, mob_y, mob_spawner, self)
                 if mob_spawner:
-                    if mob_spawner.is_client_mob_spawner() and len(mob_spawner.mobs) >= config.NON_ADMIN_MAX_MOB_SPAWN:
-                        continue
                     mob_spawner._add_mob(new_mob)
                 self._add_mob(new_mob)
 

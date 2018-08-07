@@ -13,7 +13,7 @@ def cmd_help(client, tokens):
         line_str = ''
         from command import COMMANDS
         for command in COMMANDS:
-            if command.has_access(client.admin): # client.admin >= command.min_admin_level:
+            if command.has_access(client.admin):
                 if line_str:
                     line_str += ', '
                 line_str += command.name
@@ -33,7 +33,7 @@ def cmd_help(client, tokens):
     elif len(tokens) == 2:
         from command import CMD_DICT
         command = CMD_DICT.get(tokens[1])
-        if command is not None and command.has_access(client.admin): #(client.admin >= command.min_admin_level):
+        if command is not None and command.has_access(client.admin):
             _send_chat_response(client, 'Description: %s' % command.description)
             _send_chat_response(client, 'Usage: %s' % command)
         else:
