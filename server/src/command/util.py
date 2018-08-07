@@ -1,5 +1,7 @@
+import config
 from random import randint
 
+from bitmask import BITMASK_ADMIN
 from mailbox import mail_header
 from net import packet
 from net.buffer import write_string, write_byte
@@ -14,16 +16,17 @@ class UsageError(RuntimeError):
     pass
 
 class Command:
-    def __init__(self, name, handler, arg_str='', max_args=0, description='', min_admin_level=250):
+    def __init__(self, name, handler, arg_str='', max_args=0, description='', bitmask=BITMASK_ADMIN): #min_admin_level=250):
         self.name = name
         self.handler = handler
         self.arg_str = arg_str
         self.max_args = max_args
         self.description = description
-        self.min_admin_level = min_admin_level
+        # self.min_admin_level = min_admin_level
+        self.bitmask = bitmask
 
     def handle(self, client, tokens):
-        if client.admin < self.min_admin_level:
+        if not self.has_access(client.admin):
             _unknown_cmd(client)
             return
 
@@ -43,6 +46,9 @@ class Command:
             if len(str(e)) > 0:
                 _send_chat_response(client, 'Error: %s' % str(e))
             _send_chat_response(client, 'Usage: %s' % self)
+
+    def has_access(self, client_bitmask):
+        return self.bitmask == 0 or bool(client_bitmask & self.bitmask)
 
     def __str__(self):
         return '!%s %s' % (self.name, self.arg_str)
@@ -67,7 +73,17 @@ def _send_public_chat(client, chat_str):
     write_byte(buff, CHAT_PUBLIC_COLOR)
     client.game_server.broadcast(buff)
 
-def _spawn(client, mob):
-    spawn_y = client.get_bbox().bottom() - mob['height'] * mob['scale']
-    spawn_x = client.get_bbox().hcenter() + randint(0, 100) - 50
-    client.world.send_mail_message(mail_header.MSG_ADD_MOB, (mob['id'], spawn_x, spawn_y, None))
+def _spawn_multi(client, mobs, amount):
+    client_mob_spawn = client.get_mob_spawn()
+    total_spawned = 0
+    for i in range(amount):
+        for mob in mobs:
+            # limit spawn counts for non-admin players
+            if client.admin != 250 and len(client_mob_spawn.mobs) + total_spawned >= config.NON_ADMIN_MAX_MOB_SPAWN:
+                _send_chat_response(client, 'Spawned %s mobs. (You can only have %s at one time).' % (total_spawned, config.NON_ADMIN_MAX_MOB_SPAWN))
+                return
+            spawn_y = client.get_bbox().bottom() - mob['height'] * mob['scale']
+            spawn_x = client.get_bbox().hcenter() + randint(0, 100) - 50
+            client.world.send_mail_message(mail_header.MSG_ADD_MOB, (mob['id'], spawn_x, spawn_y, client_mob_spawn))
+            total_spawned += 1
+    _send_chat_response(client, 'Spawned %s mobs.' % (total_spawned))
