@@ -1,6 +1,7 @@
 import config
+from bitmask import BITMASK_ADMIN
 from mailbox import mail_header
-from util import CommandError, UsageError, _send_chat_response, _spawn, _send_public_chat
+from util import CommandError, UsageError, _send_chat_response, _spawn_multi, _send_public_chat
 
 def cmd_help(client, tokens):
     if len(tokens) == 1:
@@ -12,7 +13,7 @@ def cmd_help(client, tokens):
         line_str = ''
         from command import COMMANDS
         for command in COMMANDS:
-            if client.admin >= command.min_admin_level:
+            if command.has_access(client.admin): # client.admin >= command.min_admin_level:
                 if line_str:
                     line_str += ', '
                 line_str += command.name
@@ -32,7 +33,7 @@ def cmd_help(client, tokens):
     elif len(tokens) == 2:
         from command import CMD_DICT
         command = CMD_DICT.get(tokens[1])
-        if command is not None and (client.admin >= command.min_admin_level):
+        if command is not None and command.has_access(client.admin): #(client.admin >= command.min_admin_level):
             _send_chat_response(client, 'Description: %s' % command.description)
             _send_chat_response(client, 'Usage: %s' % command)
         else:
@@ -123,21 +124,20 @@ def cmd_spawn(client, tokens):
     if len(tokens) > 2:
         amount = int(tokens[2])
     if mob_id < len(config.MOB_DATA) and amount > 0:
-        mob = config.MOB_DATA[mob_id]
-        for i in range(amount):
-            _spawn(client, mob)
+        mobs_to_spawn = [config.MOB_DATA[mob_id]]
+        _spawn_multi(client, mobs_to_spawn, amount)
     else:
         raise CommandError('unknown mob %s.' % tokens[1])
 
 
 def cmd_spawnall(client, tokens):
-    count = 1
+    amount = 1
     if len(tokens) == 2:
-        count = int(tokens[1])
+        amount = int(tokens[1])
 
-    for mob in config.MOB_DATA:
-        for i in range(count):
-            _spawn(client, mob)
+    mobs_to_spawn = config.MOB_DATA
+    _spawn_multi(client, mobs_to_spawn, amount)
+
 
 def cmd_hurt(client, tokens):
     local_sections = client.world.get_local_sections(client.section)
@@ -150,6 +150,7 @@ def cmd_hurt(client, tokens):
 
     _send_chat_response(client, 'hurt %s mobs.' % count)
 
+
 def cmd_hurtall(client, tokens):
     count = 0
     with client.world.mobs as mobs:
@@ -158,6 +159,7 @@ def cmd_hurtall(client, tokens):
             count += 1
 
     _send_chat_response(client, 'hurt %s mobs.' % count)
+
 
 def cmd_kill(client, tokens):
     local_sections = client.world.get_local_sections(client.section)
@@ -170,6 +172,7 @@ def cmd_kill(client, tokens):
 
     _send_chat_response(client, 'killed %s mobs.' % count)
 
+
 def cmd_killall(client, tokens):
     count = 0
     with client.world.mobs as mobs:
@@ -179,6 +182,7 @@ def cmd_killall(client, tokens):
             count += 1
 
     _send_chat_response(client, 'killed %s mobs.' % count)
+
 
 def cmd_kick(client, tokens):
     if len(tokens) != 2:
@@ -217,6 +221,7 @@ def cmd_ban_unban(client, tokens):
     else:
         raise CommandError('player %s not found.' % target_name)
 
+
 def cmd_setadmin(client, tokens):
     if len(tokens) != 3:
         raise UsageError('missing player name or admin val.')
@@ -225,6 +230,9 @@ def cmd_setadmin(client, tokens):
     admin_level = int(tokens[2])
     if admin_level < 0 or admin_level > 250:
         raise UsageError('admin level must be between 0 and 250.')
+
+    if bool(admin_level & BITMASK_ADMIN) and admin_level != 250:
+        raise UsageError('If admin bit is set, admin level bitmask must equal 250.')
 
     db_ref = client.game_server.stick_online_server.db
     target_client_db = db_ref.get_client(target_name.lower())

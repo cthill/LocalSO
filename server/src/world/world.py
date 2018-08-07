@@ -9,7 +9,7 @@ from net import packet
 from bounding_box import BoundingBox
 from mailbox import Mailbox
 from mob import Mob
-from spawner import MobSpawner
+from spawner import MobSpawner, ClientMobSpawner
 from net.buffer import *
 from util import ceildiv, LockDict, LockSet, acquire_all
 
@@ -43,10 +43,11 @@ class World(Mailbox):
         self.mob_spawn = []
 
         # mutable data that needs locks
-        self.mobs = LockDict() # Done!
-        self.section_to_clients = LockDict() # Done!
-        self.section_to_mobs = LockDict() # Done!
-        self.active_sections = LockSet() # Done!
+        self.mobs = LockDict()
+        self.section_to_clients = LockDict()
+        self.section_to_mobs = LockDict()
+        self.active_sections = LockSet()
+        self.client_mob_spawn = LockDict()
 
         self.mob_id_gen_counter = 0
         self.world_step_num = 0
@@ -143,7 +144,7 @@ class World(Mailbox):
                 self.world_step_tstamp = step_start_timestamp
 
                 with acquire_all(self.mobs, self.section_to_clients, self.section_to_mobs,
-                                 self.active_sections, self.game_server.clients):
+                                 self.active_sections, self.game_server.clients, self.client_mob_spawn):
                     self._step()
 
                 # compute time to next frame
@@ -177,7 +178,13 @@ class World(Mailbox):
 
             elif header == mail_header.MSG_ADD_MOB:
                 mob_id = self._generate_mob_id()
-                self._add_mob(Mob(mob_id, payload[0], payload[1], payload[2], payload[3], self))
+                mob_type, mob_x, mob_y, mob_spawner = payload
+                new_mob = Mob(mob_id, mob_type, mob_x, mob_y, mob_spawner, self)
+                if mob_spawner:
+                    if mob_spawner.is_client_mob_spawner() and len(mob_spawner.mobs) >= config.NON_ADMIN_MAX_MOB_SPAWN:
+                        continue
+                    mob_spawner._add_mob(new_mob)
+                self._add_mob(new_mob)
 
             elif header == mail_header.MSG_DELETE_MOB:
                 self._remove_mob(payload)
@@ -290,6 +297,14 @@ class World(Mailbox):
         return nearest
 
     def _generate_mob_id(self):
+        '''
+        Mob ID's in StickOnline are a 16 bit number.
+        LocalSO uses the upper 6 bits of the ID designate the spawner ID.
+        The lower 10 bits are the mob's unique ID within that spawner.
+        This allows a maximum of 1024 mobs per spawner.
+        Attempting to spawn more than 1024 mobs per spawner will cause mobs to be overwritten and disappear.
+        Spawner ID 0b111111 is reserved for all mobs spawned by players.
+        '''
         new_id = (0b111111 << 10) | (self.mob_id_gen_counter % 1024)
         self.mob_id_gen_counter += 1
         return new_id
@@ -318,6 +333,12 @@ class World(Mailbox):
                     continue
 
                 client.send_tcp_message(data)
+
+    def get_client_mob_spawn(self, client):
+        with self.client_mob_spawn:
+            if not self.client_mob_spawn.get(client.id):
+                self.client_mob_spawn[client.id] = ClientMobSpawner()
+            return self.client_mob_spawn[client.id]
 
     def client_disconnect(self, client):
         # lock the dict
