@@ -27,6 +27,7 @@ MENU_MOTD = config_json['menu_motd']
 
 # max number of mobs non-admins can spawn at once (if they have access to the spawn cmds)
 NON_ADMIN_MAX_MOB_SPAWN = config_json['non_admin_max_mob_spawn']
+ADMIN_MAX_MOB_SPAWN = config_json['admin_max_mob_spawn']
 
 # registration parameters
 REGISTER_ILLEGAL_CHARACTERS = ' #/\\:*?<>|"'

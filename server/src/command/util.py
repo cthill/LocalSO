@@ -77,8 +77,8 @@ def _spawn_multi(client, mobs, amount):
 
     # limit spawn counts for non-admin players
     amount_clamped = amount
-    if client.admin != 250:
-        amount_clamped = min(config.NON_ADMIN_MAX_MOB_SPAWN -  len(client_mob_spawn.mobs), amount)
+    max_mobs = config.ADMIN_MAX_MOB_SPAWN if client.admin == 250 else config.NON_ADMIN_MAX_MOB_SPAWN
+    amount_clamped = min(max_mobs - len(client_mob_spawn.mobs), amount)
 
     # spawn the mobs
     total_spawned = 0
@@ -91,6 +91,6 @@ def _spawn_multi(client, mobs, amount):
 
     # send chat response
     if amount_clamped < amount:
-        _send_chat_response(client, 'Spawned %s mobs. (You can only have %s at one time).' % (total_spawned, config.NON_ADMIN_MAX_MOB_SPAWN))
+        _send_chat_response(client, 'Spawned %s mobs. (You can only have %s at one time).' % (total_spawned, max_mobs))
     else:
         _send_chat_response(client, 'Spawned %s mobs.' % (total_spawned))
