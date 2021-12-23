@@ -24,6 +24,10 @@ if __name__ == '__main__':
                 logging.info('World thread died...')
                 exit_code = 1
                 break
+            if not server.running:
+                logging.info('Server died...')
+                exit_code = 1
+                break
     except KeyboardInterrupt:
         logging.info('Caught KeyboardInterrupt...')
     finally:
