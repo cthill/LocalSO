@@ -140,7 +140,7 @@
     "x_min": 0,
     "base_interval": 700,
     "max_of_type": 4,
-    "y": 0
+    "y": 1000
   },
   {
     "mob_type": 4,
@@ -151,7 +151,7 @@
     "x_min": 1999,
     "base_interval": 700,
     "max_of_type": 4,
-    "y": 0
+    "y": 1000
   },
   {
     "mob_type": 4,
@@ -162,7 +162,7 @@
     "x_min": 3998,
     "base_interval": 700,
     "max_of_type": 4,
-    "y": 0
+    "y": 1000
   },
   {
     "mob_type": 4,
@@ -173,7 +173,7 @@
     "x_min": 5997,
     "base_interval": 700,
     "max_of_type": 4,
-    "y": 0
+    "y": 1000
   },
   {
     "mob_type": 4,
@@ -184,7 +184,7 @@
     "x_min": 7996,
     "base_interval": 700,
     "max_of_type": 4,
-    "y": 0
+    "y": 1000
   },
   {
     "mob_type": 4,
@@ -195,7 +195,7 @@
     "x_min": 9995,
     "base_interval": 700,
     "max_of_type": 4,
-    "y": 0
+    "y": 1000
   },
   {
     "mob_type": 4,
@@ -206,7 +206,7 @@
     "x_min": 11994,
     "base_interval": 700,
     "max_of_type": 4,
-    "y": 0
+    "y": 1000
   },
   {
     "mob_type": 4,
@@ -217,7 +217,7 @@
     "x_min": 13993,
     "base_interval": 700,
     "max_of_type": 4,
-    "y": 0
+    "y": 1000
   },
   {
     "mob_type": 4,
@@ -228,7 +228,7 @@
     "x_min": 15992,
     "base_interval": 700,
     "max_of_type": 4,
-    "y": 0
+    "y": 1000
   },
   {
     "mob_type": 4,
@@ -239,7 +239,7 @@
     "x_min": 17991,
     "base_interval": 700,
     "max_of_type": 4,
-    "y": 0
+    "y": 1000
   },
   {
     "mob_type": 4,
@@ -250,7 +250,7 @@
     "x_min": 19990,
     "base_interval": 700,
     "max_of_type": 4,
-    "y": 0
+    "y": 1000
   },
   {
     "mob_type": 4,
@@ -261,7 +261,7 @@
     "x_min": 21989,
     "base_interval": 700,
     "max_of_type": 4,
-    "y": 0
+    "y": 1000
   },
   {
     "mob_type": 4,
@@ -272,7 +272,7 @@
     "x_min": 23988,
     "base_interval": 700,
     "max_of_type": 4,
-    "y": 0
+    "y": 1000
   },
   {
     "mob_type": 4,
@@ -283,7 +283,7 @@
     "x_min": 25987,
     "base_interval": 700,
     "max_of_type": 4,
-    "y": 0
+    "y": 1000
   },
   {
     "mob_type": 4,
@@ -294,7 +294,7 @@
     "x_min": 27986,
     "base_interval": 700,
     "max_of_type": 4,
-    "y": 0
+    "y": 1000
   },
   {
     "mob_type": 4,
@@ -305,7 +305,7 @@
     "x_min": 29985,
     "base_interval": 700,
     "max_of_type": 4,
-    "y": 0
+    "y": 1000
   },
   {
     "mob_type": 4,
@@ -316,7 +316,7 @@
     "x_min": 31984,
     "base_interval": 700,
     "max_of_type": 4,
-    "y": 0
+    "y": 1000
   },
   {
     "mob_type": 4,
@@ -327,7 +327,7 @@
     "x_min": 33983,
     "base_interval": 700,
     "max_of_type": 4,
-    "y": 0
+    "y": 1000
   },
   {
     "mob_type": 4,
@@ -338,7 +338,7 @@
     "x_min": 35982,
     "base_interval": 700,
     "max_of_type": 4,
-    "y": 0
+    "y": 1000
   },
   {
     "mob_type": 4,
@@ -349,7 +349,7 @@
     "x_min": 37981,
     "base_interval": 700,
     "max_of_type": 4,
-    "y": 0
+    "y": 1000
   },
   {
     "mob_type": 4,
@@ -360,7 +360,7 @@
     "x_min": 39980,
     "base_interval": 700,
     "max_of_type": 4,
-    "y": 0
+    "y": 1000
   },
   {
     "mob_type": 4,
@@ -371,7 +371,7 @@
     "x_min": 41979,
     "base_interval": 700,
     "max_of_type": 4,
-    "y": 0
+    "y": 1000
   },
   {
     "mob_type": 4,
@@ -382,7 +382,7 @@
     "x_min": 43978,
     "base_interval": 700,
     "max_of_type": 4,
-    "y": 0
+    "y": 1000
   },
   {
     "mob_type": 4,
@@ -393,7 +393,7 @@
     "x_min": 45977,
     "base_interval": 700,
     "max_of_type": 4,
-    "y": 0
+    "y": 1000
   },
   {
     "mob_type": 4,
@@ -404,7 +404,7 @@
     "x_min": 47976,
     "base_interval": 700,
     "max_of_type": 4,
-    "y": 0
+    "y": 1000
   },
   {
     "mob_type": 4,
@@ -415,7 +415,7 @@
     "x_min": 49975,
     "base_interval": 700,
     "max_of_type": 4,
-    "y": 0
+    "y": 1000
   },
   {
     "mob_type": 4,
@@ -426,7 +426,7 @@
     "x_min": 51974,
     "base_interval": 700,
     "max_of_type": 4,
-    "y": 0
+    "y": 1000
   },
   {
     "mob_type": 4,
@@ -437,7 +437,7 @@
     "x_min": 53973,
     "base_interval": 700,
     "max_of_type": 4,
-    "y": 0
+    "y": 1000
   },
   {
     "mob_type": 4,
@@ -448,7 +448,7 @@
     "x_min": 55972,
     "base_interval": 700,
     "max_of_type": 4,
-    "y": 0
+    "y": 1000
   },
   {
     "mob_type": 4,
@@ -459,7 +459,7 @@
     "x_min": 57971,
     "base_interval": 700,
     "max_of_type": 4,
-    "y": 0
+    "y": 1000
   },
   {
     "mob_type": 4,
@@ -470,7 +470,7 @@
     "x_min": 59970,
     "base_interval": 700,
     "max_of_type": 4,
-    "y": 0
+    "y": 1000
   },
   {
     "mob_type": 4,
@@ -481,7 +481,7 @@
     "x_min": 61969,
     "base_interval": 700,
     "max_of_type": 4,
-    "y": 0
+    "y": 1000
   },
   {
     "mob_type": 4,
@@ -492,7 +492,7 @@
     "x_min": 63968,
     "base_interval": 700,
     "max_of_type": 4,
-    "y": 0
+    "y": 1000
   },
   {
     "mob_type": 4,
@@ -503,6 +503,6 @@
     "x_min": 65967,
     "base_interval": 700,
     "max_of_type": 4,
-    "y": 0
+    "y": 1000
   }
 ]
