@@ -58,8 +58,15 @@ with open(DATA_DIR + '/mob.json') as f:
 
 # load mob_spawn json
 MOB_SPAWN = []
-with open(DATA_DIR + '/mob_spawn.json') as f:
+with open(DATA_DIR + '/mob_spawn_default.json') as f:
     MOB_SPAWN += json.loads(f.read())
+
+# load events and associated spawner data
+EVENTS = []
+for event in config_json['events']:
+    with open(DATA_DIR + '/' + event['mob_spawn']) as f:
+        event['mob_spawn'] = json.loads(f.read())
+        EVENTS.append(event)
 
 # load item data
 ITEM_DATA = {}
