@@ -2,6 +2,7 @@ import logging
 import math
 import time
 import traceback
+from datetime import datetime
 
 import config
 from mailbox import mail_header
@@ -41,6 +42,7 @@ class World(Mailbox):
         self.jump_through_blocks = []
         self.sections = []
         self.mob_spawn = []
+        self.events = []
 
         # mutable data that needs locks
         self.mobs = LockDict()
@@ -89,10 +91,25 @@ class World(Mailbox):
             self.jump_through_blocks.append(bbox)
 
         # create the mob spawners
-        for i in range(len(config.MOB_SPAWN)):
-            spawner_data = config.MOB_SPAWN[i]
-            new_spawner = MobSpawner(i, spawner_data, self.game_server, self)
-            self.mob_spawn.append(new_spawner)
+        spawner_id = 0
+        for spawner_data in config.MOB_SPAWN:
+            self.mob_spawn.append(MobSpawner(spawner_id, spawner_data, self.game_server, self))
+            spawner_id += 1
+
+        # create the event mob spawners
+        for event_data in config.EVENTS:
+            event = {
+                'name': event_data['name'],
+                'start_month': event_data['start_month'],
+                'start_day': event_data['start_day'],
+                'end_month': event_data['end_month'],
+                'end_day': event_data['end_day'],
+                'mob_spawn': []
+            }
+            for spawner_data in event_data['mob_spawn']:
+                event['mob_spawn'].append(MobSpawner(spawner_id, spawner_data, self.game_server, self))
+                spawner_id += 1
+            self.events.append(event)
 
     def find_section_index(self, x):
         if x < 0:
@@ -199,9 +216,30 @@ class World(Mailbox):
     def _step(self):
         self._process_mail_messages()
 
-        # run the spawners
-        for spawner in self.mob_spawn:
-            spawner.step()
+        now = datetime.now()
+        current_month = now.month
+        current_day = now.day
+
+        # loop through events and run the spawners
+        event_is_active = False
+        for event in self.events:
+            active = False
+            if event['start_month'] > event['end_month']:
+                # Event crosses a year boundary
+                if (current_month >= event['start_month'] and current_day >= event['start_day']) or (current_month <= event['end_month'] and current_day <= event['end_day']):
+                    active = True
+            else:
+                if current_month >= event['start_month'] and current_day >= event['start_day'] and current_month <= event['end_month'] and current_day <= event['end_day']:
+                    active = True
+            if active:
+                event_is_active = True
+                for spawner in event['mob_spawn']:
+                    spawner.step()
+
+        # run the default spawners if there are no active events
+        if not event_is_active:
+            for spawner in self.mob_spawn:
+                spawner.step()
 
         # find all sections in which mobs should be stepped
         active_sections_expanded = set()
