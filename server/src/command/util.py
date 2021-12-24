@@ -74,15 +74,23 @@ def _send_public_chat(client, chat_str):
 
 def _spawn_multi(client, mobs, amount):
     client_mob_spawn = client.get_mob_spawn()
+
+    # limit spawn counts for non-admin players
+    amount_clamped = amount
+    max_mobs = config.ADMIN_MAX_MOB_SPAWN if client.admin == 250 else config.NON_ADMIN_MAX_MOB_SPAWN
+    amount_clamped = min(max_mobs - len(client_mob_spawn.mobs), amount)
+
+    # spawn the mobs
     total_spawned = 0
-    for i in range(amount):
+    for i in range(amount_clamped):
         for mob in mobs:
-            # limit spawn counts for non-admin players
-            if client.admin != 250 and len(client_mob_spawn.mobs) + total_spawned >= config.NON_ADMIN_MAX_MOB_SPAWN:
-                _send_chat_response(client, 'Spawned %s mobs. (You can only have %s at one time).' % (total_spawned, config.NON_ADMIN_MAX_MOB_SPAWN))
-                return
             spawn_y = client.get_bbox().bottom() - mob['height'] * mob['scale']
             spawn_x = client.get_bbox().hcenter() + randint(0, 100) - 50
             client.world.send_mail_message(mail_header.MSG_ADD_MOB, (mob['id'], spawn_x, spawn_y, client_mob_spawn))
             total_spawned += 1
-    _send_chat_response(client, 'Spawned %s mobs.' % (total_spawned))
+
+    # send chat response
+    if amount_clamped < amount:
+        _send_chat_response(client, 'Spawned %s mobs. (You can only have %s at one time).' % (total_spawned, max_mobs))
+    else:
+        _send_chat_response(client, 'Spawned %s mobs.' % (total_spawned))

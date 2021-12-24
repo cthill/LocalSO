@@ -13,7 +13,7 @@ Requirements:
 On Windows, run `start_server.cmd` and complete the first time setup:
 
 ```
-02-03-18 16:24:24 root         INFO     LocalSO v1.3
+02-03-18 16:24:24 root         INFO     LocalSO v1.5
 02-03-18 16:24:24 db           INFO     Connected to database data/stickonline.db
 02-03-18 16:24:24 db           INFO     Performing first time setup.
 02-03-18 16:24:24 db           INFO     Creating database tables...
@@ -33,7 +33,7 @@ $ python src/main.py
 ## Connecting To The Server
 Before connecting, obtain a copy of the Stick Online client version 0.0227. It is available at [www.stick-online.com](http://www.stick-online.com/boards/index.php?topic=2.0).
 
-To connect with an unmodified client, you must add two entries to your hosts file. Use notepad or another text editor to add the following two entries to `C:\Windows\System32\drivers\etc\hosts`
+To connect with an unmodified client, you must add two entries to your hosts file. Use notepad or another text editor to add the following entries to `C:\Windows\System32\drivers\etc\hosts`
 ```
 127.0.0.1	stickonline.redirectme.net
 127.0.0.1	www.stick-online.com

@@ -7,7 +7,7 @@ from util import SigHandler
 
 if __name__ == '__main__':
     logging.basicConfig(format='%(message)s', level=logging.INFO)
-    logging.info('LocalSO v1.4')
+    logging.info('LocalSO v1.5')
 
     server = server.StickOnlineServer()
     server.start()
@@ -22,6 +22,10 @@ if __name__ == '__main__':
                 break
             if not server.game_server.world.running:
                 logging.info('World thread died...')
+                exit_code = 1
+                break
+            if not server.running:
+                logging.info('Server died...')
                 exit_code = 1
                 break
     except KeyboardInterrupt:

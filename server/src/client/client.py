@@ -6,7 +6,7 @@ import traceback
 
 import command
 import config
-from event import scheduler
+from scheduler import scheduler
 from net import packet
 from world.bounding_box import BoundingBox
 from mailbox import mail_header

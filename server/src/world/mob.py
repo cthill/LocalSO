@@ -108,6 +108,11 @@ class Mob():
             self.write_packet_this_step = True
 
     def _step_passive(self):
+        # gravity
+        self.yspeed += config.WORLD_GRAVITY
+        if self.yspeed > config.WORLD_TERMINAL_VELOCITY:
+            self.yspeed = config.WORLD_TERMINAL_VELOCITY
+
         self._move_yspeed_check_ground_collide()
         self.update_world_position(self.x, self.y)
 
