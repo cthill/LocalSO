@@ -8,7 +8,7 @@ import traceback
 
 import config
 from client.client import Client
-from event import scheduler
+from scheduler import scheduler
 from world.world import World
 from net import packet
 from net.buffer import *

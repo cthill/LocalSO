@@ -5,7 +5,7 @@ import os
 from threading import Lock
 
 import config
-from event import scheduler
+from scheduler import scheduler
 
 logger = logging.getLogger('web_svr')
 m_stick_online_server = None
