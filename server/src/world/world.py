@@ -195,7 +195,7 @@ class World(Mailbox):
 
             elif header == mail_header.MSG_ADD_MOB:
                 mob_id = self._generate_mob_id()
-                mob_type, mob_x, mob_y, mob_spawner, world = payload
+                mob_type, mob_x, mob_y, mob_spawner = payload
                 new_mob = Mob(mob_id, mob_type, mob_x, mob_y, mob_spawner, self)
                 if mob_spawner:
                     mob_spawner._add_mob(new_mob)
