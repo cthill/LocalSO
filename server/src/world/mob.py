@@ -69,11 +69,11 @@ class Mob():
             self.image_index = randint(0, self.sprite['frames'] - 1)
             self.direction = 1
 
-        # the original game didn't multiply the search radius by 1.5, but I find it makes the mobs feel much more lively
+        # the original game didn't multiply the search radius, but I find a larger radius makes the mobs feel much more lively
         self.client_aggrov = None
         self.follow_radius = int(round(self.mob_dat['follow_radius']))
-        self.follow_radius_2x = int(round(self.mob_dat['follow_radius'] * 2.0))
-        self.walk_section_search_radius = ceildiv(self.follow_radius_2x, config.WORLD_SECTION_WIDTH)
+        self.follow_radius_multiplier = int(round(self.mob_dat['follow_radius'] * config.MOB_FOLLOW_RADIUS_MULTIPLIER))
+        self.walk_section_search_radius = ceildiv(self.follow_radius_multiplier, config.WORLD_SECTION_WIDTH)
 
         self.dmg_bbox = None
         self.atk_search_radius = ceildiv(self.follow_radius, config.WORLD_SECTION_WIDTH)
@@ -168,7 +168,7 @@ class Mob():
                 # mobs are run on the world thread, so we can call
                 # world._find_player_nearest without issue
                 client_aggrov = self.world._find_player_nearest(self.get_bbox().hcenter(), section_radius=self.walk_section_search_radius)
-                if client_aggrov is not None and dist(self.x, self.y, client_aggrov.x, client_aggrov.y) <= self.follow_radius_2x:
+                if client_aggrov is not None and dist(self.x, self.y, client_aggrov.x, client_aggrov.y) <= self.follow_radius_multiplier:
                     self.client_aggrov = client_aggrov
                     if self.client_aggrov.get_bbox().hcenter() <= self.get_bbox().hcenter():
                         self._set_sprite(SPRITE_INDEX_WALK)

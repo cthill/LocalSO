@@ -18,6 +18,7 @@ MOB_SPAWN_RATE_MULTIPLIER = config_json['mob_spawn_rate_multiplier']
 MOB_SPAWN_COUNT_MAX_MULTIPLIER = config_json['mob_spawn_count_max_multiplier']
 MOB_SPAWN_CHANCE_BOSS_MULTIPLIER = config_json['mob_spawn_chance_boss_multiplier']
 MOB_SPAWN_CHANCE_BUNNY_MULTIPLIER = config_json['mob_spawn_chance_bunny_multiplier']
+MOB_FOLLOW_RADIUS_MULTIPLIER = config_json['mob_follow_radius_multiplier']
 PLAYER_DAMAGE_MULTIPLIER = config_json['player_damage_multiplier']
 PLAYER_START_GOLD = config_json['player_start_gold']
 
