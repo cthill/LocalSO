@@ -326,7 +326,7 @@ class Client(Mailbox):
             x = read_uint(data, 5) / 10.0
             y = read_short(data, 9) / 10.0
             # self.logger.info('Client %s wants to spawn %s at (%s,%s)' % (self, mob_type, x, y))
-            self.world.send_mail_message(mail_header.MSG_ADD_MOB, (mob_type, x, y, self.get_mob_spawn(), self.world))
+            self.world.send_mail_message(mail_header.MSG_ADD_MOB, (mob_type, x, y, self.get_mob_spawn()))
 
         elif header == packet.MSG_LEVEL_UP:
             new_level = read_byte(data, 2)
