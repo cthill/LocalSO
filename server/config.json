@@ -6,7 +6,7 @@
     "mob_spawn_count_max_multiplier": 1.0,
     "mob_spawn_chance_boss_multiplier": 2.0,
     "mob_spawn_chance_bunny_multiplier": 1.0,
-    "mob_follow_radius_multiplier": 2.0,
+    "mob_follow_radius_multiplier": 1.0,
     "player_damage_multiplier": 2.0,
     "player_start_gold": 500,
 
