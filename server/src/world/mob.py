@@ -141,11 +141,11 @@ class Mob():
         side_collide = self.world.solid_block_at(bbox_side)
 
         # walk, jump, atk
+        self._move_xspeed_check_side_collide(side_collide)
         on_ground = self._move_yspeed_check_ground_collide()
         self._walk_step()
         self._atk_step(on_ground)
         self._jump_step(side_collide, on_ground)
-        self._move_xspeed_check_side_collide(side_collide)
         self.update_world_position(self.x, self.y)
         self._do_animation()
 
