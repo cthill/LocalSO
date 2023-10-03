@@ -135,21 +135,17 @@ class Mob():
                 self.xspeed = 0
 
         x_plus_speed_as_int = int(round(self.x + self.xspeed))
-        x_as_int = int(round(self.x))
         y_as_int = int(round(self.y))
 
         bbox_side = BoundingBox(x_plus_speed_as_int - self.x_offset, y_as_int - self.y_offset, self.w, self.h)
         side_collide = self.world.solid_block_at(bbox_side)
 
-        bbox_below = BoundingBox(x_as_int - self.x_offset, y_as_int - self.y_offset + 1, self.w, self.h)
-        ground_below = self.world.solid_block_at(bbox_below)
-
         # walk, jump, atk
+        on_ground = self._move_yspeed_check_ground_collide()
         self._walk_step()
-        self._atk_step(ground_below)
-        self._jump_step(side_collide, ground_below)
+        self._atk_step(on_ground)
+        self._jump_step(side_collide, on_ground)
         self._move_xspeed_check_side_collide(side_collide)
-        self._move_yspeed_check_ground_collide()
         self.update_world_position(self.x, self.y)
         self._do_animation()
 
@@ -307,7 +303,7 @@ class Mob():
         self.y += self.yspeed
         if self.y - self.y_offset > config.WORLD_HEIGHT + 300:
             self._die(broadcast_death=False)
-            return
+            return False
         elif self.y < 0:
             self.y = 0
 
@@ -326,6 +322,7 @@ class Mob():
             self.y = min_touching_y - self.h + self.y_offset
             self.xspeed_knockback = 0
             self.yspeed = 0
+            return True
         else:
             sliver_height = config.WORLD_TERMINAL_VELOCITY + 1
             bottom_sliver_bbox = BoundingBox(x_as_int - self.x_offset, y_as_int - self.y_offset + self.h - sliver_height, self.w, sliver_height)
@@ -340,6 +337,9 @@ class Mob():
                 self.y = min_touching_y - self.h + self.y_offset
                 self.xspeed_knockback = 0
                 self.yspeed = 0
+                return True
+
+        return False
 
     def _do_animation(self):
         if self.sprite_index == SPRITE_INDEX_ATTACK and self.image_index >= self.sprite['frames']:
